@@ -60,7 +60,7 @@ impl eframe::App for TemplateApp {
 
         egui::SidePanel::left("left_panel").show(ctx, |ui| {
             ui.vertical_centered_justified(|ui| {
-                ui.button("Import");
+                let _ = ui.button("Import");
                 ui.label("Library");
                 ui.label("Tags");
             });
