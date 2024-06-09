@@ -9,8 +9,9 @@ rust-version = "1.72"
 
 
 [dependencies]
-egui = "0.26.0"
-eframe = { version = "0.26.0", default-features = false, features = [
+egui = "0.27.0"
+egui_extras = { version = "*", features = ["all_loaders"] }
+eframe = { version = "0.27.0", default-features = false, features = [
     #"accesskit",     # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
     "default_fonts", # Embed the default egui fonts.
     "wgpu",          # Use the glow rendering backend. Alternative: "wgpu".
@@ -25,6 +26,7 @@ egui_winit_platform = "0.22.0"
 # You only need serde if you want app persistence:
 serde = { version = "1", features = ["derive"] }
 log = "0.4"
+image = { version = "0.25.1", features = ["jpeg", "tiff"] }
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -39,7 +41,7 @@ wasm-bindgen-futures = "0.4"
 opt-level = 2 # fast and small wasm
 
 [profile.dev]
-debug = 0
+debug = true
 codegen-backend = "cranelift"
 
 # Optimize all dependencies even in debug builds:
