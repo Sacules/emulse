@@ -2,6 +2,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 #![feature(iterator_try_collect)]
 
+pub mod app;
+pub mod renderer;
+
+use crate::app::App;
+
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()> {
@@ -21,6 +26,6 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "Emulse",
         native_options,
-        Box::new(|cc| Box::new(emulse::TemplateApp::new(cc))),
+        Box::new(|cc| Box::new(App::new(cc))),
     )
 }
