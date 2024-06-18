@@ -1,12 +1,13 @@
 use crate::renderer::Renderer;
 
-use egui::{load::SizedTexture, ColorImage, Image, TextureHandle};
+use egui::load::SizedTexture;
 use image::DynamicImage;
 
 pub struct App {
-    renderer: Option<Renderer>,
+    renderer: Renderer,
     current_image: Option<DynamicImage>,
-    current_texture: Option<TextureHandle>,
+    current_texture: Option<egui::TextureHandle>,
+    frame_num: i32,
     contrast: i32,
 }
 
@@ -14,18 +15,20 @@ impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let img = image::open("test/film3.tif").unwrap();
 
+        let wgpu = cc.wgpu_render_state.as_ref().unwrap();
+
         Self {
-            //renderer: Renderer::new(cc.wgpu_render_state.as_ref().unwrap()),
-            renderer: None,
+            renderer: Renderer::new(wgpu),
             current_image: Some(img.clone()),
             current_texture: None,
             contrast: 0,
+            frame_num: 0,
         }
     }
 }
 
 impl eframe::App for App {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("nav_bar").show(ctx, |ui| {
             ui.horizontal_centered(|ui| {
                 ui.heading("Emulse");
@@ -45,23 +48,19 @@ impl eframe::App for App {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            let img = self.current_image.as_mut().unwrap();
-
-            let tex = self.current_texture.get_or_insert_with(|| {
-                // load only once
-                ctx.load_texture(
-                    "test",
-                    ColorImage::from_rgba_unmultiplied(
-                        [img.width() as usize, img.height() as usize],
-                        img.clone().into_rgba8().as_flat_samples().as_slice(),
-                    ),
-                    Default::default(),
-                )
-            });
-
-            ui.add(Image::from_texture(SizedTexture::from_handle(tex)));
-
+            ui.label("whatever lol");
             ui.add(egui::Slider::new(&mut self.contrast, -20..=20));
+
+            if let Some(current_texture) = self.current_texture.as_ref() {
+                let img = egui::Image::from_texture(SizedTexture::from_handle(current_texture));
+                img.paint_at(
+                    ui,
+                    egui::Rect {
+                        min: (0.0, 0.0).into(),
+                        max: (200.0, 200.0).into(),
+                    },
+                )
+            }
         });
     }
 }

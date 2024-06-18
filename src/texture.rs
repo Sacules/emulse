@@ -1,6 +1,5 @@
 use eframe::wgpu;
 use image::GenericImageView;
-use std::cmp;
 
 /// A representation of an image in the GPU
 pub struct Texture {
@@ -25,7 +24,7 @@ impl Texture {
         img: &image::DynamicImage,
     ) -> Self {
         let (width, height) = img.dimensions();
-        let bytes_per_pixel = std::mem::size_of::<image::Rgb<u16>>();
+        let bytes_per_pixel = std::mem::size_of::<image::Rgba<u8>>();
         let bytes = img.to_rgba8();
         let size = wgpu::Extent3d {
             width,
@@ -43,7 +42,8 @@ impl Texture {
                 | wgpu::TextureUsages::COPY_DST
                 | wgpu::TextureUsages::RENDER_ATTACHMENT,
             view_formats: &[],
-            mip_level_count: (cmp::max(width, height).ilog2() + 1).min(10),
+            mip_level_count: 1,
+            //mip_level_count: (cmp::max(width, height).ilog2() + 1).min(10),
         });
 
         queue.write_texture(
