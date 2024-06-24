@@ -10,8 +10,8 @@ pub struct App {
     /// A handle to the image processing renderer
     renderer: Renderer,
 
-    /// The main texture loaded into the GPU for editing
-    current_texture: Option<Texture>,
+    /// The main texture loaded into the GPU for editing, not shown
+    input_texture: Option<Texture>,
     current_texture_id: Option<TextureId>,
 
     /// The texture that's shown on screen after the render pass
@@ -39,7 +39,7 @@ impl App {
 
         Self {
             renderer: Renderer::new(wgpu),
-            current_texture: tex,
+            input_texture: tex,
             current_texture_id: None,
             output_texture: None,
             output_texture_id: None,
