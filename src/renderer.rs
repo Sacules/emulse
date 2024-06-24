@@ -8,7 +8,7 @@ use crate::vertex::Vertex;
 
 pub struct Renderer {
     pipeline: wgpu::RenderPipeline,
-    //uniform_buffer: wgpu::Buffer,
+    texture_bind_group: Option<wgpu::BindGroup>,
 }
 
 impl Renderer {
@@ -68,24 +68,35 @@ impl Renderer {
 
         Self {
             pipeline,
-            //uniform_bind_group,
+            texture_bind_group: None,
         }
     }
 
-    pub fn render(&mut self, wgpu: &egui_wgpu::RenderState, texture: Texture) {
-        let texture_bind_group = wgpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Texture bind group"),
-            layout: &Texture::get_bind_group_layout(&wgpu.device),
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&texture.sampler),
-                },
-            ],
+    pub fn render(
+        &mut self,
+        wgpu: &egui_wgpu::RenderState,
+        input_texture: &Texture,
+        output_texture: &Texture,
+    ) {
+        let texture_bind_group = self.texture_bind_group.get_or_insert_with(|| {
+            wgpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("Texture bind group"),
+                layout: &Texture::get_bind_group_layout(&wgpu.device),
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(
+                            input_texture.view.as_ref().unwrap(),
+                        ),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(
+                            input_texture.sampler.as_ref().unwrap(),
+                        ),
+                    },
+                ],
+            })
         });
 
         let mut encoder = wgpu
@@ -98,7 +109,7 @@ impl Renderer {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Image renderer render pass descriptor"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &texture.view,
+                    view: output_texture.view.as_ref().unwrap(),
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
@@ -116,7 +127,7 @@ impl Renderer {
             });
 
             pass.set_pipeline(&self.pipeline);
-            pass.set_bind_group(0, &texture_bind_group, &[]);
+            pass.set_bind_group(0, texture_bind_group, &[]);
         }
 
         let command_buffer = encoder.finish();

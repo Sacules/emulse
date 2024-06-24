@@ -2,13 +2,23 @@ use std::env;
 
 use crate::{renderer::Renderer, texture::Texture};
 
-use eframe::wgpu::{self};
+use eframe::wgpu;
 use egui::TextureId;
 
+/// The main object holding the app's state
 pub struct App {
+    /// A handle to the image processing renderer
     renderer: Renderer,
+
+    /// The main texture loaded into the GPU for editing
     current_texture: Option<Texture>,
     current_texture_id: Option<TextureId>,
+
+    /// The texture that's shown on screen after the render pass
+    output_texture: Option<Texture>,
+    output_texture_id: Option<TextureId>,
+
+    /// Some image controls
     contrast: i32,
 }
 
@@ -31,6 +41,8 @@ impl App {
             renderer: Renderer::new(wgpu),
             current_texture: tex,
             current_texture_id: None,
+            output_texture: None,
+            output_texture_id: None,
             contrast: 0,
         }
     }
@@ -60,20 +72,20 @@ impl eframe::App for App {
             ui.label("whatever lol");
             ui.add(egui::Slider::new(&mut self.contrast, -20..=20));
 
-            if let Some(current_texture) = self.current_texture.as_ref() {
+            if let Some(output_texture) = self.output_texture.as_ref() {
                 let id = self.current_texture_id.get_or_insert_with(|| {
                     let wgpu = frame.wgpu_render_state().unwrap();
                     let mut renderer = wgpu.renderer.write();
                     renderer.register_native_texture(
                         &wgpu.device,
-                        &current_texture.view,
+                        output_texture.view.as_ref().unwrap(),
                         wgpu::FilterMode::Linear,
                     )
                 });
 
                 ui.image((
                     id.to_owned(),
-                    (current_texture.size.0 as f32, current_texture.size.1 as f32).into(),
+                    (output_texture.size.0 as f32, output_texture.size.1 as f32).into(),
                 ));
             }
         });
