@@ -1,29 +1,34 @@
+use std::env;
+
 use crate::{renderer::Renderer, texture::Texture};
 
 use eframe::wgpu::{self};
-use image::DynamicImage;
 
 pub struct App {
     renderer: Renderer,
-    current_image: Option<DynamicImage>,
     current_texture: Option<Texture>,
-    frame_num: i32,
     contrast: i32,
 }
 
 impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let img = image::open("test/film2.tif").unwrap();
+        let args: Vec<String> = env::args().collect();
+        let mut tex = None;
 
+        // Always use wgpu, so this never fails
         let wgpu = cc.wgpu_render_state.as_ref().unwrap();
-        let tex = Texture::from_image(&wgpu.device, &wgpu.queue, &img);
+
+        if args.len() > 1 {
+            tex = match image::open(&args[1]) {
+                Ok(data) => Some(Texture::from_image(&wgpu.device, &wgpu.queue, &data)),
+                Err(_err) => None,
+            };
+        }
 
         Self {
             renderer: Renderer::new(wgpu),
-            current_image: Some(img.clone()),
-            current_texture: Some(tex),
+            current_texture: tex,
             contrast: 0,
-            frame_num: 0,
         }
     }
 }
