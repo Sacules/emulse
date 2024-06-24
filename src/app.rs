@@ -1,26 +1,27 @@
-use crate::renderer::Renderer;
+use crate::{renderer::Renderer, texture::Texture};
 
-use egui::load::SizedTexture;
+use eframe::wgpu::{self};
 use image::DynamicImage;
 
 pub struct App {
     renderer: Renderer,
     current_image: Option<DynamicImage>,
-    current_texture: Option<egui::TextureHandle>,
+    current_texture: Option<Texture>,
     frame_num: i32,
     contrast: i32,
 }
 
 impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let img = image::open("test/film3.tif").unwrap();
+        let img = image::open("test/film2.tif").unwrap();
 
         let wgpu = cc.wgpu_render_state.as_ref().unwrap();
+        let tex = Texture::from_image(&wgpu.device, &wgpu.queue, &img);
 
         Self {
             renderer: Renderer::new(wgpu),
             current_image: Some(img.clone()),
-            current_texture: None,
+            current_texture: Some(tex),
             contrast: 0,
             frame_num: 0,
         }
@@ -52,14 +53,18 @@ impl eframe::App for App {
             ui.add(egui::Slider::new(&mut self.contrast, -20..=20));
 
             if let Some(current_texture) = self.current_texture.as_ref() {
-                let img = egui::Image::from_texture(SizedTexture::from_handle(current_texture));
-                img.paint_at(
-                    ui,
-                    egui::Rect {
-                        min: (0.0, 0.0).into(),
-                        max: (200.0, 200.0).into(),
-                    },
-                )
+                let wgpu = frame.wgpu_render_state().unwrap();
+                let mut renderer = wgpu.renderer.write();
+                let id = renderer.register_native_texture(
+                    &wgpu.device,
+                    &current_texture.view,
+                    wgpu::FilterMode::Linear,
+                );
+
+                ui.image((
+                    id,
+                    (current_texture.size.0 as f32, current_texture.size.1 as f32).into(),
+                ));
             }
         });
     }
