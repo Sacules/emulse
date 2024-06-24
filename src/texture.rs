@@ -7,7 +7,7 @@ pub struct Texture {
     pub tex: wgpu::Texture,
 
     /// A way to view into said data
-    pub view: Option<wgpu::TextureView>,
+    pub view: wgpu::TextureView,
 
     /// A way to fetch the data, like a single texel
     pub sampler: Option<wgpu::Sampler>,
@@ -24,6 +24,7 @@ pub enum TextureType {
 }
 
 impl Texture {
+    /// Creates a new Texture without a view nor a sampler
     pub fn new(device: &wgpu::Device, dimensions: (u32, u32), ty: TextureType) -> Self {
         let (width, height) = dimensions;
         let size = wgpu::Extent3d {
@@ -37,7 +38,9 @@ impl Texture {
                 wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST
             }
             TextureType::Output => {
-                wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::RENDER_ATTACHMENT
+                wgpu::TextureUsages::COPY_SRC
+                    | wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | wgpu::TextureUsages::TEXTURE_BINDING
             }
         };
 
@@ -52,9 +55,11 @@ impl Texture {
             mip_level_count: 1,
         });
 
+        let view = tex.create_view(&wgpu::TextureViewDescriptor::default());
+
         Self {
             tex,
-            view: None,
+            view,
             sampler: None,
             ty,
             size: dimensions,
@@ -93,12 +98,6 @@ impl Texture {
                 rows_per_image: Some(height),
             },
             size,
-        );
-
-        texture.view = Some(
-            texture
-                .tex
-                .create_view(&wgpu::TextureViewDescriptor::default()),
         );
 
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {

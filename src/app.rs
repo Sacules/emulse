@@ -1,9 +1,13 @@
 use std::env;
 
-use crate::{renderer::Renderer, texture::Texture};
+use crate::{
+    renderer::Renderer,
+    texture::{Texture, TextureType},
+};
 
 use eframe::wgpu;
 use egui::TextureId;
+use image::GenericImageView;
 
 /// The main object holding the app's state
 pub struct App {
@@ -25,23 +29,31 @@ pub struct App {
 impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let args: Vec<String> = env::args().collect();
-        let mut tex = None;
+        let mut input_texture = None;
+        let mut output_texture = None;
 
         // Always use wgpu, so this never fails
         let wgpu = cc.wgpu_render_state.as_ref().unwrap();
 
         if args.len() > 1 {
-            tex = match image::open(&args[1]) {
-                Ok(data) => Some(Texture::from_image(&wgpu.device, &wgpu.queue, &data)),
-                Err(_err) => None,
+            match image::open(&args[1]) {
+                Ok(data) => {
+                    input_texture = Some(Texture::from_image(&wgpu.device, &wgpu.queue, &data));
+                    output_texture = Some(Texture::new(
+                        &wgpu.device,
+                        data.dimensions(),
+                        TextureType::Output,
+                    ));
+                }
+                Err(_err) => {}
             };
         }
 
         Self {
             renderer: Renderer::new(wgpu),
-            input_texture: tex,
+            input_texture,
             current_texture_id: None,
-            output_texture: None,
+            output_texture,
             output_texture_id: None,
             contrast: 0,
         }
@@ -50,6 +62,13 @@ impl App {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        // Apply filters to the current image
+        if let Some(output_texture) = self.output_texture.as_ref() {
+            let wgpu = frame.wgpu_render_state().unwrap();
+            self.renderer
+                .render(wgpu, self.input_texture.as_ref().unwrap(), output_texture);
+        }
+
         egui::TopBottomPanel::top("nav_bar").show(ctx, |ui| {
             ui.horizontal_centered(|ui| {
                 ui.heading("Emulse");
@@ -78,7 +97,7 @@ impl eframe::App for App {
                     let mut renderer = wgpu.renderer.write();
                     renderer.register_native_texture(
                         &wgpu.device,
-                        output_texture.view.as_ref().unwrap(),
+                        &output_texture.view,
                         wgpu::FilterMode::Linear,
                     )
                 });

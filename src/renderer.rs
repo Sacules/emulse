@@ -85,9 +85,7 @@ impl Renderer {
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: wgpu::BindingResource::TextureView(
-                            input_texture.view.as_ref().unwrap(),
-                        ),
+                        resource: wgpu::BindingResource::TextureView(&input_texture.view),
                     },
                     wgpu::BindGroupEntry {
                         binding: 1,
@@ -109,7 +107,7 @@ impl Renderer {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Image renderer render pass descriptor"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: output_texture.view.as_ref().unwrap(),
+                    view: &output_texture.view,
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
