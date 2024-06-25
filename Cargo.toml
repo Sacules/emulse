@@ -34,7 +34,11 @@ wasm-bindgen-futures = "0.4"
 
 
 [profile.release]
-opt-level = 2 # fast and small wasm
+opt-level = "z" # fast and small wasm
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
 
 [profile.dev]
 debug = true
