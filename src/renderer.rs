@@ -1,6 +1,7 @@
+use cgmath::Vector2;
 use eframe::{
     egui_wgpu,
-    wgpu::{self, include_wgsl},
+    wgpu::{self, include_wgsl, util::DeviceExt},
 };
 
 use crate::texture::Texture;
@@ -21,13 +22,9 @@ impl Renderer {
                 push_constant_ranges: &[],
             });
 
-        let vertex = wgpu
+        let shaders = wgpu
             .device
-            .create_shader_module(include_wgsl!("shader/image_vert.wgsl"));
-
-        let fragment = wgpu
-            .device
-            .create_shader_module(include_wgsl!("shader/image_frag.wgsl"));
+            .create_shader_module(include_wgsl!("shaders.wgsl"));
 
         let pipeline = wgpu
             .device
@@ -35,13 +32,13 @@ impl Renderer {
                 label: Some("Image render pipeline"),
                 layout: Some(&layout),
                 vertex: wgpu::VertexState {
-                    module: &vertex,
-                    entry_point: "main",
+                    module: &shaders,
+                    entry_point: "vs_main",
                     buffers: &[Vertex::desc()],
                 },
                 fragment: Some(wgpu::FragmentState {
-                    module: &fragment,
-                    entry_point: "main",
+                    module: &shaders,
+                    entry_point: "fs_main",
                     targets: &[Some(wgpu::ColorTargetState {
                         format: wgpu::TextureFormat::Rgba8UnormSrgb,
                         blend: Some(wgpu::BlendState::ALPHA_BLENDING),
@@ -97,6 +94,8 @@ impl Renderer {
             })
         });
 
+        let vertex_buffer = get_vertex_buffer(&wgpu.device, 1.0, 1.0, 0.0, 0.0);
+
         let mut encoder = wgpu
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -126,9 +125,38 @@ impl Renderer {
 
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, texture_bind_group, &[]);
+            pass.set_vertex_buffer(0, vertex_buffer.slice(..));
+            pass.draw(0..4, 0..1);
         }
 
         let command_buffer = encoder.finish();
         wgpu.queue.submit([command_buffer]);
     }
+}
+
+fn get_vertex_buffer(
+    device: &wgpu::Device,
+    start_x: f32,
+    start_y: f32,
+    end_x: f32,
+    end_y: f32,
+) -> wgpu::Buffer {
+    let texture_cords = (
+        Vector2::new(1.0, 1.0),
+        Vector2::new(1.0, 0.0),
+        Vector2::new(0.0, 1.0),
+        Vector2::new(0.0, 0.0),
+    );
+    let shape = [
+        Vertex::new(start_x, start_y, texture_cords.3.x, texture_cords.3.y),
+        Vertex::new(start_x, end_y, texture_cords.2.x, texture_cords.2.y),
+        Vertex::new(end_x, start_y, texture_cords.1.x, texture_cords.1.y),
+        Vertex::new(end_x, end_y, texture_cords.0.x, texture_cords.0.y),
+    ];
+
+    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Image Vertex Buffer"),
+        contents: bytemuck::cast_slice(shape.as_slice()),
+        usage: wgpu::BufferUsages::VERTEX,
+    })
 }
