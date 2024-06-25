@@ -7,7 +7,7 @@ use crate::{
 };
 
 use eframe::wgpu;
-use egui::TextureId;
+use egui::{panel, TextureId};
 use image::GenericImageView;
 
 /// The main object holding the app's state
@@ -99,18 +99,27 @@ impl eframe::App for App {
                     )
                 });
 
-                let panel_area = ctx.available_rect();
                 let (width, height) = output_texture.size;
 
-                let scale_x = panel_area.width() / width as f32;
-                let scale_y = panel_area.height() / height as f32;
+                egui::TopBottomPanel::bottom("image_info").show_inside(ui, |ui| {
+                    ui.horizontal_centered(|ui| {
+                        ui.label(format!("{} x {} px", width, height));
+                    });
+                });
+
+                let panel_area = ui.available_size();
+
+                let scale_x = panel_area.x / width as f32;
+                let scale_y = panel_area.y / height as f32;
                 let scale = scale_x.min(scale_y);
                 let margin_bottom = 16.0;
 
-                ui.image((
-                    id.to_owned(),
-                    (width as f32 * scale, height as f32 * scale - margin_bottom).into(),
-                ));
+                ui.centered_and_justified(|ui| {
+                    ui.image((
+                        id.to_owned(),
+                        (width as f32 * scale, height as f32 * scale - margin_bottom).into(),
+                    ));
+                });
             }
         });
 
