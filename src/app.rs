@@ -16,7 +16,6 @@ pub struct App {
 
     /// The main texture loaded into the GPU for editing, not shown
     input_texture: Option<Texture>,
-    current_texture_id: Option<TextureId>,
 
     /// The texture that's shown on screen after the render pass
     output_texture: Option<Texture>,
@@ -52,7 +51,6 @@ impl App {
         Self {
             renderer: Renderer::new(wgpu),
             input_texture,
-            current_texture_id: None,
             output_texture,
             output_texture_id: None,
             contrast: 0,
@@ -92,7 +90,7 @@ impl eframe::App for App {
             ui.add(egui::Slider::new(&mut self.contrast, -20..=20));
 
             if let Some(output_texture) = self.output_texture.as_ref() {
-                let id = self.current_texture_id.get_or_insert_with(|| {
+                let id = self.output_texture_id.get_or_insert_with(|| {
                     let wgpu = frame.wgpu_render_state().unwrap();
                     let mut renderer = wgpu.renderer.write();
                     renderer.register_native_texture(
