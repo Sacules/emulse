@@ -94,7 +94,7 @@ impl Renderer {
             })
         });
 
-        let vertex_buffer = get_vertex_buffer(&wgpu.device, 1.0, -1.0, -1.0, 1.0);
+        let vertex_buffer = get_vertex_buffer(&wgpu.device, -1.0, -1.0, 1.0, 1.0);
 
         let mut encoder = wgpu
             .device
@@ -126,7 +126,7 @@ impl Renderer {
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, texture_bind_group, &[]);
             pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-            pass.draw(0..4, 0..1);
+            pass.draw(0..6, 0..1);
         }
 
         let command_buffer = encoder.finish();
@@ -148,13 +148,15 @@ fn get_vertex_buffer(
         Vector2::new(1.0, 1.0),
     );
     let shape = [
-        Vertex::new(end_x, end_y, texture_cords.0.x, texture_cords.0.y),
-        Vertex::new(end_x, start_y, texture_cords.1.x, texture_cords.1.y),
-        Vertex::new(start_x, end_y, texture_cords.2.x, texture_cords.2.y),
-        Vertex::new(start_x, start_y, texture_cords.3.x, texture_cords.3.y),
+        // Top triangle
+        Vertex::new(start_x, end_y, texture_cords.0.x, texture_cords.0.y),
+        Vertex::new(start_x, start_y, texture_cords.1.x, texture_cords.1.y),
+        Vertex::new(end_x, start_y, texture_cords.3.x, texture_cords.3.y),
+        // Bottom triangle
+        Vertex::new(start_x, end_y, texture_cords.0.x, texture_cords.0.y),
+        Vertex::new(end_x, end_y, texture_cords.2.x, texture_cords.2.y),
+        Vertex::new(end_x, start_y, texture_cords.3.x, texture_cords.3.y),
     ];
-
-    dbg!(shape);
 
     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Image Vertex Buffer"),
