@@ -87,6 +87,30 @@ impl eframe::App for App {
             });
         });
 
+        egui::SidePanel::right("right_panel")
+            .exact_width(180.0)
+            .show(ctx, |ui| {
+                ui.vertical(|ui| {
+                    ui.label("contrast");
+                    ui.add(
+                        egui::Slider::new(&mut self.uniform.contrast, 0.9..=1.1)
+                            .trailing_fill(true),
+                    );
+
+                    ui.label("brightness");
+                    ui.add(
+                        egui::Slider::new(&mut self.uniform.brightness, -0.25..=0.25)
+                            .trailing_fill(true),
+                    );
+
+                    ui.label("saturation");
+                    ui.add(
+                        egui::Slider::new(&mut self.uniform.saturation, 0.0..=2.0)
+                            .trailing_fill(true),
+                    );
+                });
+            });
+
         egui::CentralPanel::default().show(ctx, |ui| {
             if let Some(output_texture) = self.output_texture.as_ref() {
                 let id = self.output_texture_id.get_or_insert_with(|| {
@@ -122,29 +146,5 @@ impl eframe::App for App {
                 });
             }
         });
-
-        egui::SidePanel::right("right_panel")
-            .exact_width(180.0)
-            .show(ctx, |ui| {
-                ui.vertical(|ui| {
-                    ui.label("contrast");
-                    ui.add(
-                        egui::Slider::new(&mut self.uniform.contrast, 0.9..=1.1)
-                            .trailing_fill(true),
-                    );
-
-                    ui.label("brightness");
-                    ui.add(
-                        egui::Slider::new(&mut self.uniform.brightness, -0.25..=0.25)
-                            .trailing_fill(true),
-                    );
-
-                    ui.label("saturation");
-                    ui.add(
-                        egui::Slider::new(&mut self.uniform.saturation, 0.0..=2.0)
-                            .trailing_fill(true),
-                    );
-                });
-            });
     }
 }
