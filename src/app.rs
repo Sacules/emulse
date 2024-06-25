@@ -88,15 +88,6 @@ impl eframe::App for App {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.label("contrast");
-            ui.add(egui::Slider::new(&mut self.uniform.contrast, 0.9..=1.1));
-
-            ui.label("brightness");
-            ui.add(egui::Slider::new(&mut self.uniform.brightness, -0.5..=0.5));
-
-            ui.label("saturation");
-            ui.add(egui::Slider::new(&mut self.uniform.saturation, 0.0..=2.0));
-
             if let Some(output_texture) = self.output_texture.as_ref() {
                 let id = self.output_texture_id.get_or_insert_with(|| {
                     let wgpu = frame.wgpu_render_state().unwrap();
@@ -108,11 +99,32 @@ impl eframe::App for App {
                     )
                 });
 
+                let panel_area = ctx.available_rect();
+                let (width, height) = output_texture.size;
+
+                let scale_x = panel_area.width() / width as f32;
+                let scale_y = panel_area.height() / height as f32;
+                let scale = scale_x.min(scale_y);
+
                 ui.image((
                     id.to_owned(),
-                    (output_texture.size.0 as f32, output_texture.size.1 as f32).into(),
+                    (width as f32 * scale, height as f32 * scale).into(),
                 ));
             }
+        });
+
+        egui::SidePanel::right("right_panel").show(ctx, |ui| {
+            ui.label("contrast");
+            ui.add(egui::Slider::new(&mut self.uniform.contrast, 0.9..=1.1));
+
+            ui.label("brightness");
+            ui.add(egui::Slider::new(
+                &mut self.uniform.brightness,
+                -0.25..=0.25,
+            ));
+
+            ui.label("saturation");
+            ui.add(egui::Slider::new(&mut self.uniform.saturation, 0.0..=2.0));
         });
     }
 }
