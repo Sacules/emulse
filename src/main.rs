@@ -5,6 +5,7 @@
 pub mod app;
 pub mod renderer;
 pub mod texture;
+pub mod uniform;
 pub mod vertex;
 
 use crate::app::App;

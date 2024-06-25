@@ -5,11 +5,14 @@ use eframe::{
 };
 
 use crate::texture::Texture;
+use crate::uniform::Uniform;
 use crate::vertex::Vertex;
 
 pub struct Renderer {
     pipeline: wgpu::RenderPipeline,
     texture_bind_group: Option<wgpu::BindGroup>,
+    uniform_buffer: wgpu::Buffer,
+    uniform_bind_group: wgpu::BindGroup,
 }
 
 impl Renderer {
@@ -18,7 +21,10 @@ impl Renderer {
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Image renderer pipeline layout"),
-                bind_group_layouts: &[&Texture::get_bind_group_layout(&wgpu.device)],
+                bind_group_layouts: &[
+                    &Texture::get_bind_group_layout(&wgpu.device),
+                    &Uniform::get_bind_group_layout(&wgpu.device),
+                ],
                 push_constant_ranges: &[],
             });
 
@@ -63,9 +69,30 @@ impl Renderer {
                 multiview: None,
             });
 
+        let uniform = Uniform::default();
+        let uniform_buffer = wgpu
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex uniform buffer"),
+                contents: bytemuck::cast_slice(&[uniform]),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            });
+
+        let uniform_bind_group_layout = Uniform::get_bind_group_layout(&wgpu.device);
+        let uniform_bind_group = wgpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &uniform_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform_buffer.as_entire_binding(),
+            }],
+            label: Some("Fragment uniform bind group"),
+        });
+
         Self {
             pipeline,
             texture_bind_group: None,
+            uniform_buffer,
+            uniform_bind_group,
         }
     }
 
@@ -125,6 +152,7 @@ impl Renderer {
 
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, texture_bind_group, &[]);
+            pass.set_bind_group(1, &self.uniform_bind_group, &[]);
             pass.set_vertex_buffer(0, vertex_buffer.slice(..));
             pass.draw(0..6, 0..1);
         }

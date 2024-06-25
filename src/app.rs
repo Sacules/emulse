@@ -22,7 +22,7 @@ pub struct App {
     output_texture_id: Option<TextureId>,
 
     /// Some image controls
-    contrast: i32,
+    contrast: f32,
 }
 
 impl App {
@@ -53,7 +53,7 @@ impl App {
             input_texture,
             output_texture,
             output_texture_id: None,
-            contrast: 0,
+            contrast: 1.0,
         }
     }
 }
@@ -87,7 +87,7 @@ impl eframe::App for App {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.label("whatever lol");
-            ui.add(egui::Slider::new(&mut self.contrast, -20..=20));
+            ui.add(egui::Slider::new(&mut self.contrast, -1.0..=2.0));
 
             if let Some(output_texture) = self.output_texture.as_ref() {
                 let id = self.output_texture_id.get_or_insert_with(|| {
