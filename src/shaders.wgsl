@@ -28,5 +28,12 @@ var sampler_in: sampler;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-	return textureSample(texture_in, sampler_in, in.tex_coords);
+	var tex = textureSample(texture_in, sampler_in, in.tex_coords);
+
+	return desaturate(tex.rgb);
+}
+
+fn desaturate(color: vec3<f32>) -> vec4<f32> {
+	var new_color = dot(color, vec3<f32>(0.2126, 0.7152, 0.0722));
+	return vec4<f32>(new_color, new_color, new_color, 1.0);
 }
