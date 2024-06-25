@@ -96,6 +96,10 @@ impl Renderer {
         }
     }
 
+    pub fn prepare(&self, queue: &wgpu::Queue, uniform: Uniform) {
+        queue.write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[uniform]));
+    }
+
     pub fn render(
         &mut self,
         wgpu: &egui_wgpu::RenderState,

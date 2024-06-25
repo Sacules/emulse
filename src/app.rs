@@ -3,6 +3,7 @@ use std::env;
 use crate::{
     renderer::Renderer,
     texture::{Texture, TextureType},
+    uniform::Uniform,
 };
 
 use eframe::wgpu;
@@ -21,8 +22,8 @@ pub struct App {
     output_texture: Option<Texture>,
     output_texture_id: Option<TextureId>,
 
-    /// Some image controls
-    contrast: f32,
+    /// A way to parametrize the shaders from the UI
+    uniform: Uniform,
 }
 
 impl App {
@@ -53,7 +54,7 @@ impl App {
             input_texture,
             output_texture,
             output_texture_id: None,
-            contrast: 1.0,
+            uniform: Uniform::default(),
         }
     }
 }
@@ -63,6 +64,7 @@ impl eframe::App for App {
         // Apply filters to the current image
         if let Some(output_texture) = self.output_texture.as_ref() {
             let wgpu = frame.wgpu_render_state().unwrap();
+            self.renderer.prepare(&wgpu.queue, self.uniform);
             self.renderer
                 .render(wgpu, self.input_texture.as_ref().unwrap(), output_texture);
         }
@@ -86,8 +88,8 @@ impl eframe::App for App {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.label("whatever lol");
-            ui.add(egui::Slider::new(&mut self.contrast, -1.0..=2.0));
+            ui.label("contrast");
+            ui.add(egui::Slider::new(&mut self.uniform.contrast, 0.75..=1.25));
 
             if let Some(output_texture) = self.output_texture.as_ref() {
                 let id = self.output_texture_id.get_or_insert_with(|| {
