@@ -94,7 +94,7 @@ impl Renderer {
             })
         });
 
-        let vertex_buffer = get_vertex_buffer(&wgpu.device, 1.0, 1.0, 0.0, 0.0);
+        let vertex_buffer = get_vertex_buffer(&wgpu.device, 1.0, -1.0, -1.0, 1.0);
 
         let mut encoder = wgpu
             .device
@@ -142,17 +142,19 @@ fn get_vertex_buffer(
     end_y: f32,
 ) -> wgpu::Buffer {
     let texture_cords = (
-        Vector2::new(1.0, 1.0),
-        Vector2::new(1.0, 0.0),
-        Vector2::new(0.0, 1.0),
         Vector2::new(0.0, 0.0),
+        Vector2::new(0.0, 1.0),
+        Vector2::new(1.0, 0.0),
+        Vector2::new(1.0, 1.0),
     );
     let shape = [
-        Vertex::new(start_x, start_y, texture_cords.3.x, texture_cords.3.y),
-        Vertex::new(start_x, end_y, texture_cords.2.x, texture_cords.2.y),
-        Vertex::new(end_x, start_y, texture_cords.1.x, texture_cords.1.y),
         Vertex::new(end_x, end_y, texture_cords.0.x, texture_cords.0.y),
+        Vertex::new(end_x, start_y, texture_cords.1.x, texture_cords.1.y),
+        Vertex::new(start_x, end_y, texture_cords.2.x, texture_cords.2.y),
+        Vertex::new(start_x, start_y, texture_cords.3.x, texture_cords.3.y),
     ];
+
+    dbg!(shape);
 
     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Image Vertex Buffer"),
