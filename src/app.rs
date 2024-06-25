@@ -105,10 +105,11 @@ impl eframe::App for App {
                 let scale_x = panel_area.width() / width as f32;
                 let scale_y = panel_area.height() / height as f32;
                 let scale = scale_x.min(scale_y);
+                let margin_bottom = 16.0;
 
                 ui.image((
                     id.to_owned(),
-                    (width as f32 * scale, height as f32 * scale).into(),
+                    (width as f32 * scale, height as f32 * scale - margin_bottom).into(),
                 ));
             }
         });
