@@ -15,7 +15,7 @@ impl Default for Uniform {
         Self {
             contrast: 1.0,
             saturation: 1.0,
-            brightness: 1.0,
+            brightness: 0.0,
         }
     }
 }

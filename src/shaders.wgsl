@@ -28,6 +28,8 @@ var sampler_in: sampler;
 
 struct Uniform {
 	contrast: f32,
+	saturation: f32,
+	brightness: f32,
 }
 
 @group(1) @binding(0)
@@ -37,7 +39,7 @@ var<uniform> uniform: Uniform;
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 	var tex = textureSample(texture_in, sampler_in, in.tex_coords);
 
-	return saturation(1.0) * brightness(0.0) * contrast(uniform.contrast) * tex;
+	return saturation(uniform.saturation) * brightness(uniform.brightness) * contrast(uniform.contrast) * tex;
 }
 
 fn saturation(val: f32) -> mat4x4<f32> {

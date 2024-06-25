@@ -89,7 +89,13 @@ impl eframe::App for App {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.label("contrast");
-            ui.add(egui::Slider::new(&mut self.uniform.contrast, 0.75..=1.25));
+            ui.add(egui::Slider::new(&mut self.uniform.contrast, 0.9..=1.1));
+
+            ui.label("brightness");
+            ui.add(egui::Slider::new(&mut self.uniform.brightness, -0.5..=0.5));
+
+            ui.label("saturation");
+            ui.add(egui::Slider::new(&mut self.uniform.saturation, 0.0..=2.0));
 
             if let Some(output_texture) = self.output_texture.as_ref() {
                 let id = self.output_texture_id.get_or_insert_with(|| {
