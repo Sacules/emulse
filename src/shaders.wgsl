@@ -30,7 +30,26 @@ var sampler_in: sampler;
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 	var tex = textureSample(texture_in, sampler_in, in.tex_coords);
 
-	return brightness(-0.2) * contrast(1.0) * tex;
+	return saturation(2.5) * brightness(-0.05) * contrast(1.1) * tex;
+}
+
+fn saturation(val: f32) -> mat4x4<f32> {
+	var luminance = vec3<f32>(0.3086, 0.6094, 0.0820);
+	var oneMinusSat = 1.0 - val;
+	var redVal = 1.0;
+	var greenVal = 1.0;
+	var blueVal = 1.0;
+
+	var red = vec3<f32>(luminance.x * oneMinusSat);
+	red+= vec3<f32>(val, 0, 0) * redVal;
+
+	var green = vec3<f32>(luminance.y * oneMinusSat );
+	green += vec3<f32>(0, val, 0) * greenVal;
+
+	var blue = vec3<f32>(luminance.z * oneMinusSat);
+	blue += vec3<f32>(0, 0, val) * blueVal;
+
+	return mat4x4<f32>(vec4<f32>(red, 0),vec4<f32>(green,0),vec4<f32>(blue,0),vec4<f32>(0, 0, 0, 1));
 }
 
 fn contrast(val: f32) -> mat4x4<f32> {
