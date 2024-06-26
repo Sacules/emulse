@@ -20,9 +20,9 @@ eframe = { version = "0.27.0", default-features = false, features = [
 # You only need serde if you want app persistence:
 serde = { version = "1", features = ["derive"] }
 log = "0.4"
-image = { version = "0.25.1", features = ["jpeg", "tiff"] }
+image = { version = "0.25.1", features = ["jpeg", "rayon", "tiff"] }
 bytemuck = { version = "1.16.0", features = ["derive"] }
-cgmath = "0.18.0"
+cgmath = { version = "0.18.0", features = ["mint", "swizzle"] }
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
