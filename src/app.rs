@@ -1,14 +1,13 @@
-use std::env;
-
 use crate::{
     renderer::Renderer,
     texture::{Texture, TextureType},
-    uniform::Uniform,
+    uniform::{FragmentUniform, VertexUniform},
 };
 
 use eframe::wgpu;
-use egui::{panel, TextureId};
+use egui::TextureId;
 use image::GenericImageView;
+use std::env;
 
 /// The main object holding the app's state
 pub struct App {
@@ -23,7 +22,11 @@ pub struct App {
     output_texture_id: Option<TextureId>,
 
     /// A way to parametrize the shaders from the UI
-    uniform: Uniform,
+    frag_uniform: FragmentUniform,
+    vert_uniform: VertexUniform,
+
+    /// How much to rotate the image, in degrees
+    rotation_angle: i32,
 }
 
 impl App {
@@ -54,7 +57,9 @@ impl App {
             input_texture,
             output_texture,
             output_texture_id: None,
-            uniform: Uniform::default(),
+            frag_uniform: FragmentUniform::default(),
+            vert_uniform: VertexUniform::default(),
+            rotation_angle: 0,
         }
     }
 }
@@ -64,7 +69,8 @@ impl eframe::App for App {
         // Apply filters to the current image
         if let Some(output_texture) = self.output_texture.as_ref() {
             let wgpu = frame.wgpu_render_state().unwrap();
-            self.renderer.prepare(&wgpu.queue, self.uniform);
+            self.renderer
+                .prepare(&wgpu.queue, self.frag_uniform, self.vert_uniform);
             self.renderer
                 .render(wgpu, self.input_texture.as_ref().unwrap(), output_texture);
         }
@@ -93,26 +99,26 @@ impl eframe::App for App {
                 ui.vertical(|ui| {
                     ui.label("contrast");
                     ui.add(
-                        egui::Slider::new(&mut self.uniform.contrast, 0.9..=1.1)
+                        egui::Slider::new(&mut self.frag_uniform.contrast, 0.9..=1.1)
                             .trailing_fill(true),
                     );
 
                     ui.label("brightness");
                     ui.add(
-                        egui::Slider::new(&mut self.uniform.brightness, -0.25..=0.25)
+                        egui::Slider::new(&mut self.frag_uniform.brightness, -0.25..=0.25)
                             .trailing_fill(true),
                     );
 
                     ui.label("saturation");
                     ui.add(
-                        egui::Slider::new(&mut self.uniform.saturation, 0.0..=2.0)
+                        egui::Slider::new(&mut self.frag_uniform.saturation, 0.0..=2.0)
                             .trailing_fill(true),
                     );
                 });
             });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            if let Some(output_texture) = self.output_texture.as_ref() {
+            if let Some(output_texture) = self.output_texture.as_ref().as_mut() {
                 let id = self.output_texture_id.get_or_insert_with(|| {
                     let wgpu = frame.wgpu_render_state().unwrap();
                     let mut renderer = wgpu.renderer.write();
@@ -124,6 +130,23 @@ impl eframe::App for App {
                 });
 
                 let (width, height) = output_texture.size;
+
+                egui::TopBottomPanel::top("image_controls").show_inside(ui, |ui| {
+                    ui.horizontal_centered(|ui| {
+                        if ui.button("↺").clicked() {
+                            self.output_texture.as_mut().unwrap().size = (height, width);
+                            self.rotation_angle += 90;
+                            self.vert_uniform.matrix =
+                                VertexUniform::rotate(self.rotation_angle).into();
+                        }
+                        if ui.button("↻").clicked() {
+                            self.output_texture.as_mut().unwrap().size = (height, width);
+                            self.rotation_angle -= 90;
+                            self.vert_uniform.matrix =
+                                VertexUniform::rotate(self.rotation_angle).into();
+                        }
+                    });
+                });
 
                 egui::TopBottomPanel::bottom("image_info").show_inside(ui, |ui| {
                     ui.horizontal_centered(|ui| {

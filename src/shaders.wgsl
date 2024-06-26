@@ -1,4 +1,11 @@
 // Vertex
+struct VertexUniform {
+	matrix: mat4x4<f32>,
+}
+
+@group(1) @binding(0)
+var<uniform> vert_uniform: VertexUniform;
+
 struct VertexInput {
     @location(0) pos: vec3<f32>,
     @location(1) tex_coords: vec2<f32>,
@@ -13,7 +20,7 @@ struct VertexOutput {
 fn vs_main(model: VertexInput) -> VertexOutput {
 	var out: VertexOutput;
 	out.tex_coords = model.tex_coords;
-	out.pos = vec4<f32>(model.pos, 1.0);
+	out.pos = vert_uniform.matrix * vec4<f32>(model.pos, 1.0);
 
 	return out;
 }
@@ -26,20 +33,20 @@ var texture_in: texture_2d<f32>;
 @group(0) @binding(1)
 var sampler_in: sampler;
 
-struct Uniform {
-	contrast: f32,
+struct FragmentUniform {
+    contrast: f32,
 	saturation: f32,
 	brightness: f32,
 }
 
-@group(1) @binding(0)
-var<uniform> uniform: Uniform;
+@group(2) @binding(0)
+var<uniform> frag_uniform: FragmentUniform;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 	var tex = textureSample(texture_in, sampler_in, in.tex_coords);
 
-	return saturation(uniform.saturation) * brightness(uniform.brightness) * contrast(uniform.contrast) * tex;
+	return saturation(frag_uniform.saturation) * brightness(frag_uniform.brightness) * contrast(frag_uniform.contrast) * tex;
 }
 
 fn saturation(val: f32) -> mat4x4<f32> {

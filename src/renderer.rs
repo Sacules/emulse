@@ -4,15 +4,17 @@ use eframe::{
     wgpu::{self, include_wgsl, util::DeviceExt},
 };
 
-use crate::texture::Texture;
-use crate::uniform::Uniform;
+use crate::uniform::FragmentUniform;
 use crate::vertex::Vertex;
+use crate::{texture::Texture, uniform::VertexUniform};
 
 pub struct Renderer {
     pipeline: wgpu::RenderPipeline,
     texture_bind_group: Option<wgpu::BindGroup>,
-    uniform_buffer: wgpu::Buffer,
-    uniform_bind_group: wgpu::BindGroup,
+    frag_uniform_buffer: wgpu::Buffer,
+    frag_uniform_bind_group: wgpu::BindGroup,
+    vert_uniform_buffer: wgpu::Buffer,
+    vert_uniform_bind_group: wgpu::BindGroup,
 }
 
 impl Renderer {
@@ -23,7 +25,8 @@ impl Renderer {
                 label: Some("Image renderer pipeline layout"),
                 bind_group_layouts: &[
                     &Texture::get_bind_group_layout(&wgpu.device),
-                    &Uniform::get_bind_group_layout(&wgpu.device),
+                    &VertexUniform::get_bind_group_layout(&wgpu.device),
+                    &FragmentUniform::get_bind_group_layout(&wgpu.device),
                 ],
                 push_constant_ranges: &[],
             });
@@ -69,35 +72,70 @@ impl Renderer {
                 multiview: None,
             });
 
-        let uniform = Uniform::default();
-        let uniform_buffer = wgpu
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex uniform buffer"),
-                contents: bytemuck::cast_slice(&[uniform]),
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            });
+        let frag_uniform = FragmentUniform::default();
+        let frag_uniform_buffer =
+            wgpu.device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("Fragment uniform buffer"),
+                    contents: bytemuck::cast_slice(&[frag_uniform]),
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                });
 
-        let uniform_bind_group_layout = Uniform::get_bind_group_layout(&wgpu.device);
-        let uniform_bind_group = wgpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &uniform_bind_group_layout,
+        let frag_uniform_bind_group_layout = FragmentUniform::get_bind_group_layout(&wgpu.device);
+        let frag_uniform_bind_group = wgpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &frag_uniform_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
-                resource: uniform_buffer.as_entire_binding(),
+                resource: frag_uniform_buffer.as_entire_binding(),
             }],
             label: Some("Fragment uniform bind group"),
+        });
+
+        let vert_uniform = VertexUniform::default();
+        let vert_uniform_buffer =
+            wgpu.device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("Vertex uniform buffer"),
+                    contents: bytemuck::cast_slice(&[vert_uniform]),
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                });
+
+        let vert_uniform_bind_group_layout = VertexUniform::get_bind_group_layout(&wgpu.device);
+        let vert_uniform_bind_group = wgpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &vert_uniform_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: vert_uniform_buffer.as_entire_binding(),
+            }],
+            label: Some("Vertex uniform bind group"),
         });
 
         Self {
             pipeline,
             texture_bind_group: None,
-            uniform_buffer,
-            uniform_bind_group,
+            frag_uniform_buffer,
+            frag_uniform_bind_group,
+            vert_uniform_buffer,
+            vert_uniform_bind_group,
         }
     }
 
-    pub fn prepare(&self, queue: &wgpu::Queue, uniform: Uniform) {
-        queue.write_buffer(&self.uniform_buffer, 0, bytemuck::cast_slice(&[uniform]));
+    pub fn prepare(
+        &self,
+        queue: &wgpu::Queue,
+        frag_uniform: FragmentUniform,
+        vert_uniform: VertexUniform,
+    ) {
+        queue.write_buffer(
+            &self.frag_uniform_buffer,
+            0,
+            bytemuck::cast_slice(&[frag_uniform]),
+        );
+        queue.write_buffer(
+            &self.vert_uniform_buffer,
+            0,
+            bytemuck::cast_slice(&[vert_uniform]),
+        );
     }
 
     pub fn render(
@@ -156,7 +194,8 @@ impl Renderer {
 
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, texture_bind_group, &[]);
-            pass.set_bind_group(1, &self.uniform_bind_group, &[]);
+            pass.set_bind_group(1, &self.vert_uniform_bind_group, &[]);
+            pass.set_bind_group(2, &self.frag_uniform_bind_group, &[]);
             pass.set_vertex_buffer(0, vertex_buffer.slice(..));
             pass.draw(0..6, 0..1);
         }
