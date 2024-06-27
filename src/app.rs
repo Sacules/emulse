@@ -4,6 +4,7 @@ use crate::{
     uniform::{FragmentUniform, VertexUniform, OPENGL_TO_WGPU_MATRIX},
 };
 
+use cgmath::num_traits::clamp;
 use eframe::wgpu;
 use egui::TextureId;
 use image::GenericImageView;
@@ -143,10 +144,10 @@ impl eframe::App for App {
                         }
 
                         if ui.button("-").clicked() {
-                            self.zoom_factor -= 0.25;
+                            self.zoom_factor -= 0.125;
                         }
                         if ui.button("+").clicked() {
-                            self.zoom_factor += 0.25;
+                            self.zoom_factor += 0.125;
                         }
                     });
                 });
@@ -175,7 +176,11 @@ impl eframe::App for App {
                 ui.centered_and_justified(|ui| {
                     ui.image((
                         id.to_owned(),
-                        (width as f32 * scale, height as f32 * scale).into(),
+                        (
+                            clamp(width as f32 * scale * self.zoom_factor, 0.0, panel_area.x),
+                            clamp(height as f32 * scale * self.zoom_factor, 0.0, panel_area.y),
+                        )
+                            .into(),
                     ));
                 });
             }
