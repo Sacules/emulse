@@ -20,7 +20,7 @@ struct VertexOutput {
 fn vs_main(model: VertexInput) -> VertexOutput {
 	var out: VertexOutput;
 	out.tex_coords = model.tex_coords;
-	out.pos = vert_uniform.matrix * vec4<f32>(model.pos, 1.0);
+	out.pos = vert_uniform.matrix * vec4<f32>(model.pos.x, model.pos.y, 0.0, 1.0);
 
 	return out;
 }

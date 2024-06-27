@@ -1,7 +1,7 @@
 use crate::{
     renderer::Renderer,
     texture::{Texture, TextureType},
-    uniform::{FragmentUniform, VertexUniform},
+    uniform::{FragmentUniform, VertexUniform, OPENGL_TO_WGPU_MATRIX},
 };
 
 use eframe::wgpu;
@@ -27,6 +27,9 @@ pub struct App {
 
     /// How much to rotate the image, in degrees
     rotation_angle: i32,
+
+    /// How much to zoom in / out
+    zoom_factor: f32,
 }
 
 impl App {
@@ -60,6 +63,7 @@ impl App {
             frag_uniform: FragmentUniform::default(),
             vert_uniform: VertexUniform::default(),
             rotation_angle: 0,
+            zoom_factor: 1.0,
         }
     }
 }
@@ -129,24 +133,28 @@ impl eframe::App for App {
                     )
                 });
 
-                let (width, height) = output_texture.size;
-
                 egui::TopBottomPanel::top("image_controls").show_inside(ui, |ui| {
-                    ui.horizontal_centered(|ui| {
+                    ui.horizontal(|ui| {
                         if ui.button("↺").clicked() {
-                            self.output_texture.as_mut().unwrap().size = (height, width);
                             self.rotation_angle += 90;
-                            self.vert_uniform.matrix =
-                                VertexUniform::rotate(self.rotation_angle).into();
                         }
                         if ui.button("↻").clicked() {
-                            self.output_texture.as_mut().unwrap().size = (height, width);
                             self.rotation_angle -= 90;
-                            self.vert_uniform.matrix =
-                                VertexUniform::rotate(self.rotation_angle).into();
+                        }
+
+                        if ui.button("-").clicked() {
+                            self.zoom_factor -= 0.25;
+                        }
+                        if ui.button("+").clicked() {
+                            self.zoom_factor += 0.25;
                         }
                     });
                 });
+
+                let (mut width, mut height) = output_texture.size;
+                if self.rotation_angle % 180 == 90 {
+                    (width, height) = (height, width);
+                }
 
                 egui::TopBottomPanel::bottom("image_info").show_inside(ui, |ui| {
                     ui.horizontal_centered(|ui| {
@@ -156,15 +164,18 @@ impl eframe::App for App {
 
                 let panel_area = ui.available_size();
 
+                let matrix = VertexUniform::rotate(self.rotation_angle)
+                    * VertexUniform::scale(self.zoom_factor);
+                self.vert_uniform.matrix = matrix.into();
+
                 let scale_x = panel_area.x / width as f32;
                 let scale_y = panel_area.y / height as f32;
                 let scale = scale_x.min(scale_y);
-                let margin_bottom = 16.0;
 
                 ui.centered_and_justified(|ui| {
                     ui.image((
                         id.to_owned(),
-                        (width as f32 * scale, height as f32 * scale - margin_bottom).into(),
+                        (width as f32 * scale, height as f32 * scale).into(),
                     ));
                 });
             }

@@ -1,5 +1,13 @@
-use cgmath::{Deg, Matrix4, SquareMatrix};
+use cgmath::{ortho, Deg, Matrix4, SquareMatrix};
 use eframe::wgpu;
+
+#[rustfmt::skip]
+pub const OPENGL_TO_WGPU_MATRIX: Matrix4<f32> = Matrix4::new(
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 0.5, 0.0,
+    0.0, 0.0, 0.5, 1.0,
+);
 
 // We need this for Rust to store our data correctly for the shaders
 #[repr(C)]
@@ -26,7 +34,7 @@ impl FragmentUniform {
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
-                visibility: wgpu::ShaderStages::FRAGMENT,
+                visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
@@ -72,5 +80,9 @@ impl VertexUniform {
 
     pub fn rotate(angle: i32) -> Matrix4<f32> {
         Matrix4::from_angle_z(Deg(angle as f32))
+    }
+
+    pub fn scale(factor: f32) -> Matrix4<f32> {
+        Matrix4::from_scale(factor)
     }
 }
