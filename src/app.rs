@@ -1,7 +1,7 @@
 use crate::{
     renderer::Renderer,
     texture::{Texture, TextureType},
-    uniform::{FragmentUniform, VertexUniform, OPENGL_TO_WGPU_MATRIX},
+    uniform::{FragmentUniform, VertexUniform},
 };
 
 use cgmath::num_traits::clamp;
@@ -165,18 +165,19 @@ impl eframe::App for App {
 
                 let panel_area = ui.available_size();
 
-                let matrix = VertexUniform::rotate(self.rotation_angle)
-                    * VertexUniform::scale(self.zoom_factor);
-                self.vert_uniform.matrix = matrix.into();
-
                 let scale_x = panel_area.x / width as f32;
                 let scale_y = panel_area.y / height as f32;
                 let scale = scale_x.min(scale_y);
+
+                let matrix = VertexUniform::rotate(self.rotation_angle)
+                    * VertexUniform::scale(self.zoom_factor);
+                self.vert_uniform.matrix = matrix.into();
 
                 ui.centered_and_justified(|ui| {
                     ui.image((
                         id.to_owned(),
                         (
+                            // Prevent the image from overflowing the container
                             clamp(width as f32 * scale * self.zoom_factor, 0.0, panel_area.x),
                             clamp(height as f32 * scale * self.zoom_factor, 0.0, panel_area.y),
                         )
