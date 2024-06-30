@@ -5,7 +5,7 @@ use crate::{
 };
 
 use eframe::{epaint, wgpu};
-use egui::{load::SizedTexture, TextureId};
+use egui::{load::SizedTexture, TextureId, Vec2};
 use image::GenericImageView;
 use std::env;
 
@@ -163,10 +163,10 @@ impl eframe::App for App {
                 });
 
                 ui.centered_and_justified(|ui| {
-                    let img =
-                        egui::Image::new((id.to_owned(), (width as f32, height as f32).into()))
-                            .maintain_aspect_ratio(true)
-                            .shrink_to_fit();
+                    let size = Vec2::new(width as f32, height as f32);
+                    let img = egui::Image::new((id.to_owned(), size))
+                        .maintain_aspect_ratio(true)
+                        .shrink_to_fit();
 
                     ui.add(img);
                 });
