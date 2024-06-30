@@ -4,8 +4,9 @@ use crate::{
     uniform::{FragmentUniform, VertexUniform},
 };
 
-use eframe::{epaint, wgpu};
-use egui::{load::SizedTexture, TextureId, Vec2};
+use cgmath::{Angle, Deg, Rad};
+use eframe::wgpu;
+use egui::{load::SizedTexture, Pos2, TextureId, Vec2};
 use image::GenericImageView;
 use std::env;
 
@@ -26,7 +27,7 @@ pub struct App {
     vert_uniform: VertexUniform,
 
     /// How much to rotate the image, in degrees
-    rotation_angle: i32,
+    rotation_angle: Rad<f32>,
 
     /// How much to zoom in / out
     zoom_factor: f32,
@@ -62,7 +63,7 @@ impl App {
             output_texture_id: None,
             frag_uniform: FragmentUniform::default(),
             vert_uniform: VertexUniform::default(),
-            rotation_angle: 0,
+            rotation_angle: Rad(0.0),
             zoom_factor: 1.0,
         }
     }
@@ -136,10 +137,10 @@ impl eframe::App for App {
                 egui::TopBottomPanel::top("image_controls").show_inside(ui, |ui| {
                     ui.horizontal(|ui| {
                         if ui.button("↺").clicked() {
-                            self.rotation_angle += 90;
+                            self.rotation_angle -= Rad::turn_div_4();
                         }
                         if ui.button("↻").clicked() {
-                            self.rotation_angle -= 90;
+                            self.rotation_angle += Rad::turn_div_4();
                         }
 
                         if ui.button("-").clicked() {
@@ -151,10 +152,7 @@ impl eframe::App for App {
                     });
                 });
 
-                let (mut width, mut height) = output_texture.size;
-                if self.rotation_angle % 180 == 90 {
-                    (width, height) = (height, width);
-                }
+                let (width, height) = output_texture.size;
 
                 egui::TopBottomPanel::bottom("image_info").show_inside(ui, |ui| {
                     ui.horizontal_centered(|ui| {
@@ -162,13 +160,16 @@ impl eframe::App for App {
                     });
                 });
 
-                ui.centered_and_justified(|ui| {
-                    let size = Vec2::new(width as f32, height as f32);
-                    let img = egui::Image::new((id.to_owned(), size))
-                        .maintain_aspect_ratio(true)
-                        .shrink_to_fit();
+                egui::ScrollArea::both().show(ui, |ui| {
+                    ui.centered_and_justified(|ui| {
+                        let size = Vec2::new(width as f32, height as f32);
+                        let img = egui::Image::new((id.to_owned(), size))
+                            .maintain_aspect_ratio(true)
+                            .rotate(self.rotation_angle.0, Vec2::splat(0.5))
+                            .fit_to_fraction((self.zoom_factor, self.zoom_factor).into());
 
-                    ui.add(img);
+                        ui.add(img);
+                    });
                 });
             }
         });
