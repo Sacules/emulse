@@ -3,6 +3,7 @@
 #![feature(iterator_try_collect)]
 
 pub mod app;
+pub mod compute;
 pub mod renderer;
 pub mod texture;
 pub mod uniform;

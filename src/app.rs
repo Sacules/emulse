@@ -1,4 +1,5 @@
 use crate::{
+    compute::Compute,
     renderer::Renderer,
     texture::{Texture, TextureType},
     uniform::{FragmentUniform, VertexUniform},
@@ -31,6 +32,9 @@ pub struct App {
 
     /// How much to zoom in / out
     zoom_factor: f32,
+
+    /// A handle to the compute pipeline
+    compute: Compute,
 }
 
 impl App {
@@ -65,6 +69,7 @@ impl App {
             vert_uniform: VertexUniform::default(),
             rotation_angle: Rad(0.0),
             zoom_factor: 1.0,
+            compute: Compute::new(wgpu),
         }
     }
 }

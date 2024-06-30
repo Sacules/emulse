@@ -20,7 +20,7 @@ struct VertexOutput {
 fn vs_main(model: VertexInput) -> VertexOutput {
 	var out: VertexOutput;
 	out.tex_coords = model.tex_coords;
-	out.pos = vert_uniform.matrix * vec4<f32>(model.pos.x, model.pos.y, 0.0, 1.0);
+	out.pos = vec4<f32>(model.pos, 1.0);
 
 	return out;
 }
@@ -88,8 +88,11 @@ fn brightness(val: f32) -> mat4x4<f32> {
 	);
 }
 
+// from: https://www.w3.org/WAI/GL/wiki/Relative_luminance
+const kSRGBLuminanceFactors = vec3f(0.2126, 0.7152, 0.0722);
+
 // Relative luminance
 fn desaturate(color: vec3<f32>) -> vec4<f32> {
-	var new_color = dot(color, vec3<f32>(0.2126, 0.7152, 0.0722));
+	var new_color = dot(color, kSRGBLuminanceFactors);
 	return vec4<f32>(new_color, new_color, new_color, 1.0);
 }
