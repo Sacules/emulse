@@ -4,9 +4,9 @@ use crate::{
     uniform::{FragmentUniform, VertexUniform},
 };
 
-use cgmath::{Angle, Deg, Rad};
+use cgmath::{Angle, Rad};
 use eframe::wgpu;
-use egui::{load::SizedTexture, Pos2, TextureId, Vec2};
+use egui::{TextureId, Vec2};
 use image::GenericImageView;
 use std::env;
 
