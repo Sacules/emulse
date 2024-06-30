@@ -11,6 +11,11 @@ use egui::{TextureId, Vec2};
 use image::GenericImageView;
 use std::env;
 
+enum ImageOrientation {
+    Horizontal,
+    Vertical,
+}
+
 /// The main object holding the app's state
 pub struct App {
     /// A handle to the image processing renderer
@@ -27,6 +32,8 @@ pub struct App {
     frag_uniform: FragmentUniform,
     vert_uniform: VertexUniform,
 
+    image_orientation: Option<ImageOrientation>,
+
     /// How much to rotate the image, in degrees
     rotation_angle: Rad<f32>,
 
@@ -42,6 +49,7 @@ impl App {
         let args: Vec<String> = env::args().collect();
         let mut input_texture = None;
         let mut output_texture = None;
+        let mut orientation = None;
 
         // Always use wgpu, so this never fails
         let wgpu = cc.wgpu_render_state.as_ref().unwrap();
@@ -49,12 +57,18 @@ impl App {
         if args.len() > 1 {
             match image::open(&args[1]) {
                 Ok(data) => {
+                    let dimensions = data.dimensions();
                     input_texture = Some(Texture::from_image(&wgpu.device, &wgpu.queue, &data));
                     output_texture = Some(Texture::new(
                         &wgpu.device,
-                        data.dimensions(),
+                        dimensions.clone(),
                         TextureType::Output,
                     ));
+                    if dimensions.0 > dimensions.1 {
+                        orientation = Some(ImageOrientation::Horizontal);
+                    } else {
+                        orientation = Some(ImageOrientation::Vertical);
+                    }
                 }
                 Err(_err) => {}
             };
@@ -67,6 +81,7 @@ impl App {
             output_texture_id: None,
             frag_uniform: FragmentUniform::default(),
             vert_uniform: VertexUniform::default(),
+            image_orientation: orientation,
             rotation_angle: Rad(0.0),
             zoom_factor: 1.0,
             compute: Compute::new(wgpu),
@@ -92,14 +107,6 @@ impl eframe::App for App {
                     ui.heading("Library");
                     ui.heading("Process");
                 });
-            });
-        });
-
-        egui::SidePanel::left("left_panel").show(ctx, |ui| {
-            ui.vertical_centered_justified(|ui| {
-                let _ = ui.button("Import");
-                ui.label("Library");
-                ui.label("Tags");
             });
         });
 
@@ -139,13 +146,17 @@ impl eframe::App for App {
                     )
                 });
 
+                let (mut width, mut height) = output_texture.size;
+
                 egui::TopBottomPanel::top("image_controls").show_inside(ui, |ui| {
                     ui.horizontal(|ui| {
                         if ui.button("↺").clicked() {
                             self.rotation_angle -= Rad::turn_div_4();
+                            (width, height) = (height, width);
                         }
                         if ui.button("↻").clicked() {
                             self.rotation_angle += Rad::turn_div_4();
+                            (width, height) = (height, width);
                         }
 
                         if ui.button("-").clicked() {
@@ -156,8 +167,6 @@ impl eframe::App for App {
                         }
                     });
                 });
-
-                let (width, height) = output_texture.size;
 
                 egui::TopBottomPanel::bottom("image_info").show_inside(ui, |ui| {
                     ui.horizontal_centered(|ui| {
