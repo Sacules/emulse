@@ -4,7 +4,7 @@ use eframe::{
 };
 use std::{mem, sync::mpsc::channel};
 
-use crate::texture::Texture;
+use crate::darkroom::texture::Texture;
 
 const HISTOGRAM_NUM_BINS: u64 = 256;
 

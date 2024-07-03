@@ -4,9 +4,9 @@ use eframe::{
     wgpu::{self, include_wgsl, util::DeviceExt},
 };
 
-use crate::uniform::FragmentUniform;
-use crate::vertex::Vertex;
-use crate::{texture::Texture, uniform::VertexUniform};
+use crate::darkroom::uniform::FragmentUniform;
+use crate::darkroom::vertex::Vertex;
+use crate::darkroom::{texture::Texture, uniform::VertexUniform};
 
 pub struct Renderer {
     pipeline: wgpu::RenderPipeline,
