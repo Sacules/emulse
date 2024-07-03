@@ -1,3 +1,5 @@
+use std::env;
+
 use crate::darkroom::Darkroom;
 
 enum CurrentView {
@@ -12,9 +14,15 @@ pub struct App {
 
 impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        let args: Vec<String> = env::args().collect();
+        let filename = match args.len() {
+            0 => "".to_string(),
+            _ => args[1].clone(),
+        };
+
         Self {
             current_view: CurrentView::Darkroom,
-            darkroom: Darkroom::new(cc),
+            darkroom: Darkroom::new(cc, filename.clone()),
         }
     }
 }

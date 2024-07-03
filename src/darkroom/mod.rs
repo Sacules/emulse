@@ -15,7 +15,6 @@ use cgmath::{Angle, Rad};
 use eframe::wgpu;
 use egui::{TextureId, Vec2};
 use image::GenericImageView;
-use std::env;
 
 /// The main object holding the app's state
 pub struct Darkroom {
@@ -44,24 +43,20 @@ pub struct Darkroom {
 }
 
 impl Darkroom {
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let args: Vec<String> = env::args().collect();
+    pub fn new(cc: &eframe::CreationContext<'_>, filename: String) -> Self {
         let mut input_texture = None;
         let mut output_texture = None;
 
         // Always use wgpu, so this never fails
         let wgpu = cc.wgpu_render_state.as_ref().unwrap();
 
-        if args.len() > 1 {
-            match image::open(&args[1]) {
-                Ok(data) => {
-                    let dimensions = data.dimensions();
-                    input_texture = Some(Texture::from_image(&wgpu.device, &wgpu.queue, &data));
-                    output_texture =
-                        Some(Texture::new(&wgpu.device, dimensions, TextureType::Output));
-                }
-                Err(_err) => {}
-            };
+        match image::open(filename) {
+            Ok(data) => {
+                let dimensions = data.dimensions();
+                input_texture = Some(Texture::from_image(&wgpu.device, &wgpu.queue, &data));
+                output_texture = Some(Texture::new(&wgpu.device, dimensions, TextureType::Output));
+            }
+            Err(_err) => {}
         }
 
         Self {
