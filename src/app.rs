@@ -1,3 +1,4 @@
+use egui_extras::install_image_loaders;
 use std::env;
 
 use crate::darkroom::Darkroom;
@@ -22,8 +23,10 @@ impl App {
             _ => args[1].clone(),
         };
 
+        install_image_loaders(&cc.egui_ctx);
+
         Self {
-            current_view: CurrentView::Darkroom,
+            current_view: CurrentView::LightTable,
             darkroom: Darkroom::new(cc, filename.clone()),
             light_table: LightTable::new(cc),
         }

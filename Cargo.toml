@@ -14,15 +14,22 @@ eframe = { version = "0.27.0", default-features = false, features = [
     #"accesskit",     # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
     "default_fonts",
     "wgpu",
-	"wayland",
+    "wayland",
 ] }
 
 # You only need serde if you want app persistence:
 serde = { version = "1", features = ["derive"] }
 log = "0.4"
-image = { version = "0.25.1", features = ["jpeg", "rayon", "tiff"] }
+image = { version = "0.24.0", default-features = false, features = [
+    "jpeg",
+    "tiff",
+    "bmp",
+    "rayon",
+] }
 bytemuck = { version = "1.16.0", features = ["derive"] }
 cgmath = { version = "0.18.0", features = ["mint", "swizzle"] }
+egui_extras = { version = "*", features = ["all_loaders", "image", "file"] }
+egui_grid = "0.5.1"
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -34,7 +41,7 @@ wasm-bindgen-futures = "0.4"
 
 
 [profile.release]
-opt-level = "z" # fast and small wasm
+opt-level = "z"   # fast and small wasm
 strip = true
 lto = true
 codegen-units = 1
