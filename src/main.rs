@@ -4,6 +4,7 @@
 
 pub mod app;
 pub mod darkroom;
+pub mod lighttable;
 
 use crate::app::App;
 

@@ -84,16 +84,6 @@ impl eframe::App for Darkroom {
                 .render(wgpu, self.input_texture.as_ref().unwrap(), output_texture);
         }
 
-        egui::TopBottomPanel::top("nav_bar").show(ctx, |ui| {
-            ui.horizontal_centered(|ui| {
-                ui.heading("Emulse");
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
-                    ui.heading("Library");
-                    ui.heading("Process");
-                });
-            });
-        });
-
         egui::SidePanel::right("right_panel")
             .exact_width(180.0)
             .show(ctx, |ui| {
