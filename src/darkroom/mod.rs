@@ -16,8 +16,11 @@ use miniquad as mq;
 
 /// The main object holding the app's state
 pub struct Darkroom {
+    /// Whether this view is ready for showing
+    pub ready: bool,
+
     /// A handle to the image processing renderer
-    renderer: Option<Renderer>,
+    pub renderer: Option<Renderer>,
 
     /// The main texture loaded into the GPU for editing, not shown
     input_texture: Option<Texture>,
@@ -41,6 +44,7 @@ pub struct Darkroom {
 impl Darkroom {
     pub fn new() -> Self {
         Self {
+            ready: false,
             renderer: None,
             input_texture: None,
             output_texture: None,
@@ -62,15 +66,16 @@ impl Darkroom {
         self.renderer = Some(Renderer::new(mq_ctx));
         self.input_texture = Some(input_texture);
         self.output_texture = Some(output_texture);
+        self.ready = true;
     }
 
-    pub fn update(&mut self, mq_ctx: &mut mq::Context) -> TextureId {
+    pub fn update(&mut self, mq_ctx: &mut mq::Context) {
         // Apply filters to the current image
         self.renderer.as_mut().unwrap().render(
             mq_ctx,
             &self.input_texture.as_ref().unwrap(),
             &self.output_texture.as_ref().unwrap(),
-        )
+        );
     }
 
     pub fn ui(&mut self, ctx: &egui::Context) {
@@ -111,7 +116,10 @@ impl Darkroom {
             });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            let (width, height) = self.output_texture.as_ref().unwrap().size;
+            let (mut width, mut height) = (0, 0);
+            if let Some(output_texture) = self.output_texture.as_ref() {
+                (width, height) = output_texture.size;
+            }
 
             egui::TopBottomPanel::top("image_controls").show_inside(ui, |ui| {
                 ui.horizontal(|ui| {
@@ -141,13 +149,17 @@ impl Darkroom {
 
             egui::ScrollArea::both().show(ui, |ui| {
                 ui.centered_and_justified(|ui| {
-                    let img = egui::Image::new((self.output_texture_id.unwrap().to_owned(), size))
-                        .rotate(self.rotation_angle.0, Vec2::splat(0.5))
-                        .maintain_aspect_ratio(true)
-                        .fit_to_fraction((self.zoom_factor, self.zoom_factor).into());
+                    if let Some(id) = self.output_texture_id {
+                        let img = egui::Image::new((id.to_owned(), size))
+                            .rotate(self.rotation_angle.0, Vec2::splat(0.5))
+                            .maintain_aspect_ratio(true)
+                            .fit_to_fraction((self.zoom_factor, self.zoom_factor).into());
 
-                    ui.add(img);
+                        ctx.debug_text(format!("{:?}", id));
+                        ui.add(img);
+                    }
                 });
+                ctx.texture_ui(ui);
             });
         });
     }

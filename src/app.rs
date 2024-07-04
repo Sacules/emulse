@@ -4,6 +4,7 @@ use {egui_miniquad as egui_mq, miniquad as mq};
 use crate::darkroom::Darkroom;
 use crate::lighttable::LightTable;
 
+#[derive(PartialEq)]
 enum CurrentView {
     LightTable,
     Darkroom,
@@ -46,9 +47,10 @@ impl mq::EventHandler for App {
     fn update(&mut self) {
         match self.current_view {
             CurrentView::Darkroom => {
-                self.darkroom
-                    .prepare("test/film-pos4.tif".into(), &mut *self.mq_ctx);
-                self.darkroom.output_texture_id = Some(self.darkroom.update(&mut *self.mq_ctx));
+                if !self.darkroom.ready {
+                    self.darkroom
+                        .prepare("test/film-pos7.jpg".into(), &mut *self.mq_ctx);
+                }
             }
             CurrentView::LightTable => {}
         }
@@ -83,11 +85,16 @@ impl mq::EventHandler for App {
             //TODO: add panels before and leave this only to the main one?
             match self.current_view {
                 CurrentView::Darkroom => self.darkroom.ui(ctx),
-                CurrentView::LightTable => self.light_table.update(ctx),
+                CurrentView::LightTable => self.light_table.ui(ctx),
             }
         });
 
         self.egui_mq.draw(&mut *self.mq_ctx);
+
+        if self.current_view == CurrentView::Darkroom && self.darkroom.ready {
+            self.darkroom.update(&mut *self.mq_ctx);
+        }
+
         self.mq_ctx.commit_frame();
     }
 

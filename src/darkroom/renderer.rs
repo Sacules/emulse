@@ -1,3 +1,5 @@
+use std::mem::size_of;
+
 use cgmath::Vector2;
 use miniquad as mq;
 
@@ -7,29 +9,23 @@ use crate::darkroom::vertex::Vertex;
 
 pub struct Renderer {
     pipeline: mq::Pipeline,
-    bindings: mq::Bindings,
+    vertex_buffer: mq::BufferId,
+    index_buffer: mq::BufferId,
 }
 
 impl Renderer {
     pub fn new(mq_ctx: &mut mq::Context) -> Self {
-        let vertex_buffer = get_vertex_buffer(mq_ctx, -1.0, -1.0, 1.0, 1.0);
+        let vertex_buffer = get_vertex_buffer(mq_ctx);
 
         #[rustfmt::skip]
         let indices: &[u16] = &[
-        	0, 0,
-         	0, 0
+        	0, 1, 2, 0, 2, 3,
         ];
         let index_buffer = mq_ctx.new_buffer(
             mq::BufferType::IndexBuffer,
             mq::BufferUsage::Immutable,
             mq::BufferSource::slice(indices),
         );
-
-        let bindings = mq::Bindings {
-            vertex_buffers: vec![vertex_buffer],
-            index_buffer,
-            images: vec![],
-        };
 
         let shader = mq_ctx
             .new_shader(
@@ -39,21 +35,18 @@ impl Renderer {
                 },
                 mq::ShaderMeta {
                     images: vec![],
-                    uniforms: mq::UniformBlockLayout {
-                        uniforms: vec![mq::UniformDesc::new("mvp", mq::UniformType::Mat4)],
-                    },
+                    uniforms: mq::UniformBlockLayout { uniforms: vec![] },
                 },
             )
             .unwrap();
 
         let pipeline = mq_ctx.new_pipeline(
             &[mq::BufferLayout {
-                stride: indices.len() as i32,
                 ..Default::default()
             }],
             &[
-                mq::VertexAttribute::new("pos", mq::VertexFormat::Float3),
-                mq::VertexAttribute::new("color0", mq::VertexFormat::Float4),
+                mq::VertexAttribute::new("position", mq::VertexFormat::Float2),
+                mq::VertexAttribute::new("tex_coords", mq::VertexFormat::Float2),
             ],
             shader,
             mq::PipelineParams {
@@ -63,7 +56,11 @@ impl Renderer {
             },
         );
 
-        Self { pipeline, bindings }
+        Self {
+            pipeline,
+            vertex_buffer,
+            index_buffer,
+        }
     }
 
     pub fn render(
@@ -71,47 +68,39 @@ impl Renderer {
         mq_ctx: &mut mq::Context,
         input_texture: &Texture,
         output_texture: &Texture,
-    ) -> egui::TextureId {
-        let pass = mq_ctx.new_render_pass(input_texture.id, Some(output_texture.id));
+    ) {
+        let bindings = mq::Bindings {
+            vertex_buffers: vec![self.vertex_buffer],
+            index_buffer: self.index_buffer,
+            images: vec![input_texture.id],
+        };
 
-        mq_ctx.begin_pass(Some(pass), mq::PassAction::clear_color(0.0, 0.0, 0.0, 0.0));
+        mq_ctx.begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 0.0));
         mq_ctx.apply_pipeline(&self.pipeline);
+        mq_ctx.apply_bindings(&bindings);
         //mq_ctx.apply_uniforms(mq::UniformsSource::table(data));
         mq_ctx.draw(0, 6, 1);
         mq_ctx.end_render_pass();
 
         // create egui TextureId from Miniquad GL texture Id
+        /*
         let raw_id = match unsafe { mq_ctx.texture_raw_id(output_texture.id) } {
             mq::RawId::OpenGl(id) => id as u64,
         };
 
         egui::TextureId::User(raw_id)
+         */
     }
 }
 
-fn get_vertex_buffer(
-    mq_ctx: &mut mq::Context,
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
-) -> mq::BufferId {
+fn get_vertex_buffer(mq_ctx: &mut mq::Context) -> mq::BufferId {
     // Draw a rectangle
-    let texture_cords = (
-        Vector2::new(0.0, 0.0),
-        Vector2::new(0.0, 1.0),
-        Vector2::new(1.0, 0.0),
-        Vector2::new(1.0, 1.0),
-    );
+    #[rustfmt::skip]
     let shape = [
-        // Top triangle
-        Vertex::new(start_x, end_y, texture_cords.0.x, texture_cords.0.y),
-        Vertex::new(start_x, start_y, texture_cords.1.x, texture_cords.1.y),
-        Vertex::new(end_x, start_y, texture_cords.3.x, texture_cords.3.y),
-        // Bottom triangle
-        Vertex::new(start_x, end_y, texture_cords.0.x, texture_cords.0.y),
-        Vertex::new(end_x, end_y, texture_cords.2.x, texture_cords.2.y),
-        Vertex::new(end_x, start_y, texture_cords.3.x, texture_cords.3.y),
+        Vertex { position: [ -0.5, -0.5 ],  tex_coords: [0.0, 1.0] },
+        Vertex { position: [  0.5, -0.5 ],  tex_coords: [1.0, 1.0] },
+        Vertex { position: [  0.5,  0.5 ],  tex_coords: [1.0, 0.0] },
+        Vertex { position: [  -0.5,  0.5 ], tex_coords: [0.0, 0.0] },
     ];
 
     mq_ctx.new_buffer(

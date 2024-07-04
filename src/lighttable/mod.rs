@@ -5,7 +5,7 @@ impl LightTable {
         Self {}
     }
 
-    pub fn update(&mut self, ctx: &egui::Context) {
+    pub fn ui(&mut self, ctx: &egui::Context) {
         let test_images = [
             "file://test/roll/01.jpg",
             "file://test/roll/02.jpg",
@@ -19,34 +19,10 @@ impl LightTable {
             "file://test/roll/10.jpg",
             "file://test/roll/11.jpg",
             "file://test/roll/12.jpg",
-            "file://test/roll/13.jpg",
-            "file://test/roll/14.jpg",
-            "file://test/roll/15.jpg",
-            "file://test/roll/16.jpg",
-            "file://test/roll/17.jpg",
-            "file://test/roll/18.jpg",
-            "file://test/roll/19.jpg",
-            "file://test/roll/20.jpg",
-            "file://test/roll/21.jpg",
-            "file://test/roll/22.jpg",
-            "file://test/roll/23.jpg",
-            "file://test/roll/24.jpg",
-            "file://test/roll/25.jpg",
-            "file://test/roll/26.jpg",
-            "file://test/roll/27.jpg",
-            "file://test/roll/28.jpg",
-            "file://test/roll/29.jpg",
-            "file://test/roll/30.jpg",
-            "file://test/roll/31.jpg",
-            "file://test/roll/32.jpg",
-            "file://test/roll/33.jpg",
-            "file://test/roll/34.jpg",
-            "file://test/roll/35.jpg",
-            "file://test/roll/36.jpg",
         ];
 
         egui::SidePanel::left("left_panel")
-            .min_width(268.0)
+            .max_width(268.0)
             .show(ctx, |ui| {
                 ui.vertical(|ui| {
                     ui.collapsing("Library", |ui| {
@@ -58,7 +34,7 @@ impl LightTable {
             });
 
         egui::SidePanel::right("right_panel")
-            .min_width(300.0)
+            .max_width(300.0)
             .show_animated(ctx, true, |ui| {
                 ui.vertical(|ui| {
                     ui.collapsing("Selection", |ui| {
