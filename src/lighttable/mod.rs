@@ -1,26 +1,43 @@
-pub struct LightTable {}
+use egui::{TextureHandle, TextureId};
+use image::DynamicImage;
+use std::collections::HashMap;
+
+pub struct LightTable {
+    pub images: Vec<DynamicImage>,
+    pub texture_map: HashMap<String, TextureHandle>,
+}
+
+const TEST_IMAGES: [&str; 12] = [
+    "test/roll/01.jpg",
+    "test/roll/02.jpg",
+    "test/roll/03.jpg",
+    "test/roll/04.jpg",
+    "test/roll/05.jpg",
+    "test/roll/06.jpg",
+    "test/roll/07.jpg",
+    "test/roll/08.jpg",
+    "test/roll/09.jpg",
+    "test/roll/10.jpg",
+    "test/roll/11.jpg",
+    "test/roll/12.jpg",
+];
 
 impl LightTable {
     pub fn new() -> Self {
-        Self {}
+        let mut images = Vec::new();
+
+        for img in TEST_IMAGES {
+            let data = image::open(img).unwrap();
+            images.push(data);
+        }
+
+        Self {
+            images,
+            texture_map: HashMap::new(),
+        }
     }
 
     pub fn ui(&mut self, ctx: &egui::Context) {
-        let test_images = [
-            "file://test/roll/01.jpg",
-            "file://test/roll/02.jpg",
-            "file://test/roll/03.jpg",
-            "file://test/roll/04.jpg",
-            "file://test/roll/05.jpg",
-            "file://test/roll/06.jpg",
-            "file://test/roll/07.jpg",
-            "file://test/roll/08.jpg",
-            "file://test/roll/09.jpg",
-            "file://test/roll/10.jpg",
-            "file://test/roll/11.jpg",
-            "file://test/roll/12.jpg",
-        ];
-
         egui::SidePanel::left("left_panel")
             .max_width(268.0)
             .show(ctx, |ui| {
@@ -50,7 +67,7 @@ impl LightTable {
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
                         let mut grid_builder = egui_grid::GridBuilder::new().spacing(16.0, 16.0);
-                        for i in 0..test_images.len() {
+                        for i in 0..TEST_IMAGES.len() {
                             if i % 5 == 0 {
                                 grid_builder =
                                     grid_builder.new_row(egui_extras::Size::exact(250.0));
@@ -61,10 +78,10 @@ impl LightTable {
 
                         // Only show after preallocating enough space
                         grid_builder.show(ui, |mut grid| {
-                            for img in test_images {
+                            for (i, img) in self.images.clone().into_iter().enumerate() {
                                 grid.cell(|ui| {
                                     ui.centered_and_justified(|ui| {
-                                        image_slide(ui, img);
+                                        self.image_slide(ctx, ui, TEST_IMAGES[i], &img);
                                     });
                                 });
                             }
@@ -73,24 +90,43 @@ impl LightTable {
             });
         });
     }
-}
 
-fn image_slide(ui: &mut egui::Ui, img: &str) {
-    let mut f = egui::Frame::default().inner_margin(32.0).begin(ui);
-    f.frame.fill = egui::Color32::DARK_GRAY;
-    {
-        let resp = f.content_ui.add(
-            egui::Image::new(img)
-                .maintain_aspect_ratio(true)
-                .fit_to_exact_size((176.0, 176.0).into()),
-        );
+    fn image_slide(
+        &mut self,
+        ctx: &egui::Context,
+        ui: &mut egui::Ui,
+        path: &str,
+        img: &DynamicImage,
+    ) {
+        if !self.texture_map.contains_key(&path.to_string()) {
+            let bytes = img.to_rgba8();
+            let data = egui::ColorImage::from_rgba_unmultiplied(
+                [img.width() as usize, img.height() as usize],
+                &bytes.into_flat_samples().samples,
+            );
 
-        if resp.hovered() {
-            f.frame.fill = egui::Color32::GRAY;
+            let handle = ctx.load_texture(path, data, Default::default());
+            self.texture_map.insert(path.to_string(), handle);
         }
 
-        f.content_ui
-            .label(egui::RichText::new(img).color(egui::Color32::WHITE));
+        let handle = self.texture_map.get(&path.to_string()).unwrap();
+
+        let mut f = egui::Frame::default().inner_margin(32.0).begin(ui);
+        f.frame.fill = egui::Color32::DARK_GRAY;
+        {
+            let image = egui::Image::new(handle)
+                .show_loading_spinner(true)
+                .maintain_aspect_ratio(true)
+                .fit_to_exact_size((176.0, 176.0).into());
+            let resp = f.content_ui.add(image);
+
+            if resp.hovered() {
+                f.frame.fill = egui::Color32::GRAY;
+            }
+
+            f.content_ui
+                .label(egui::RichText::new(path).color(egui::Color32::WHITE));
+        }
+        f.end(ui);
     }
-    f.end(ui);
 }
