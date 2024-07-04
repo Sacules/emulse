@@ -10,7 +10,7 @@ use crate::darkroom::{
 };
 
 use cgmath::{Angle, Rad};
-use egui::Vec2;
+use egui::{TextureId, Vec2};
 use image::GenericImageView;
 use miniquad as mq;
 
@@ -24,6 +24,8 @@ pub struct Darkroom {
 
     /// The texture that's shown on screen after the render pass
     output_texture: Option<Texture>,
+
+    pub output_texture_id: Option<TextureId>,
 
     /// A way to parametrize the shaders from the UI
     frag_uniform: FragmentUniform,
@@ -42,6 +44,7 @@ impl Darkroom {
             renderer: None,
             input_texture: None,
             output_texture: None,
+            output_texture_id: None,
             frag_uniform: FragmentUniform::default(),
             vert_uniform: VertexUniform::default(),
             rotation_angle: Rad(0.0),
@@ -61,14 +64,16 @@ impl Darkroom {
         self.output_texture = Some(output_texture);
     }
 
-    pub fn update(&mut self, mq_ctx: &mut mq::Context, ctx: &egui::Context) {
+    pub fn update(&mut self, mq_ctx: &mut mq::Context) -> TextureId {
         // Apply filters to the current image
-        let id = self.renderer.as_mut().unwrap().render(
+        self.renderer.as_mut().unwrap().render(
             mq_ctx,
             &self.input_texture.as_ref().unwrap(),
             &self.output_texture.as_ref().unwrap(),
-        );
+        )
+    }
 
+    pub fn ui(&mut self, ctx: &egui::Context) {
         egui::SidePanel::right("right_panel")
             .exact_width(180.0)
             .show(ctx, |ui| {
@@ -136,7 +141,7 @@ impl Darkroom {
 
             egui::ScrollArea::both().show(ui, |ui| {
                 ui.centered_and_justified(|ui| {
-                    let img = egui::Image::new((id.to_owned(), size))
+                    let img = egui::Image::new((self.output_texture_id.unwrap().to_owned(), size))
                         .rotate(self.rotation_angle.0, Vec2::splat(0.5))
                         .maintain_aspect_ratio(true)
                         .fit_to_fraction((self.zoom_factor, self.zoom_factor).into());

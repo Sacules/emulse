@@ -43,10 +43,19 @@ impl App {
 }
 
 impl mq::EventHandler for App {
-    fn update(&mut self) {}
+    fn update(&mut self) {
+        match self.current_view {
+            CurrentView::Darkroom => {
+                self.darkroom
+                    .prepare("test/film-pos4.tif".into(), &mut *self.mq_ctx);
+                self.darkroom.output_texture_id = Some(self.darkroom.update(&mut *self.mq_ctx));
+            }
+            CurrentView::LightTable => {}
+        }
+    }
 
     fn draw(&mut self) {
-        self.egui_mq.run(&mut *self.mq_ctx, |mq_ctx, ctx| {
+        self.egui_mq.run(&mut *self.mq_ctx, |_, ctx| {
             egui_extras::install_image_loaders(ctx);
 
             egui::TopBottomPanel::top("nav_bar")
@@ -73,10 +82,7 @@ impl mq::EventHandler for App {
 
             //TODO: add panels before and leave this only to the main one?
             match self.current_view {
-                CurrentView::Darkroom => {
-                    self.darkroom.prepare("".into(), mq_ctx);
-                    self.darkroom.update(mq_ctx, ctx);
-                }
+                CurrentView::Darkroom => self.darkroom.ui(ctx),
                 CurrentView::LightTable => self.light_table.update(ctx),
             }
         });
