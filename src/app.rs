@@ -1,7 +1,7 @@
 use std::env;
 use {egui_miniquad as egui_mq, miniquad as mq};
 
-//use crate::darkroom::Darkroom;
+use crate::darkroom::Darkroom;
 use crate::lighttable::LightTable;
 
 enum CurrentView {
@@ -18,24 +18,25 @@ pub struct App {
 
     current_view: CurrentView,
     light_table: LightTable,
-    //darkroom: Darkroom,
+    darkroom: Darkroom,
 }
 
 impl App {
     pub fn new() -> Self {
         let args: Vec<String> = env::args().collect();
         let _filename = match args.len() {
-            1 => None,
-            _ => Some(args[1].clone()),
+            1 => "".into(),
+            _ => args[1].clone(),
         };
 
         let mut mq_ctx = mq::window::new_rendering_backend();
+        let egui_mq = egui_mq::EguiMq::new(&mut *mq_ctx);
 
         Self {
-            egui_mq: egui_mq::EguiMq::new(&mut *mq_ctx),
+            egui_mq,
             mq_ctx,
             current_view: CurrentView::LightTable,
-            //darkroom: Darkroom::new(filename),
+            darkroom: Darkroom::new(),
             light_table: LightTable::new(),
         }
     }
@@ -45,7 +46,7 @@ impl mq::EventHandler for App {
     fn update(&mut self) {}
 
     fn draw(&mut self) {
-        self.egui_mq.run(&mut *self.mq_ctx, |_, ctx| {
+        self.egui_mq.run(&mut *self.mq_ctx, |mq_ctx, ctx| {
             egui_extras::install_image_loaders(ctx);
 
             egui::TopBottomPanel::top("nav_bar")
@@ -57,6 +58,7 @@ impl mq::EventHandler for App {
                             let darkroom =
                                 ui.add(egui::Button::new(egui::RichText::new("Darkroom")));
                             if darkroom.clicked() {
+                                //TODO: retrieve filename of current image
                                 self.current_view = CurrentView::Darkroom;
                             }
 
@@ -71,11 +73,14 @@ impl mq::EventHandler for App {
 
             //TODO: add panels before and leave this only to the main one?
             match self.current_view {
-                CurrentView::Darkroom => {}
-                //CurrentView::Darkroom => self.darkroom.update(ctx),
+                CurrentView::Darkroom => {
+                    self.darkroom.prepare("".into(), mq_ctx);
+                    self.darkroom.update(mq_ctx, ctx);
+                }
                 CurrentView::LightTable => self.light_table.update(ctx),
             }
         });
+
         self.egui_mq.draw(&mut *self.mq_ctx);
         self.mq_ctx.commit_frame();
     }

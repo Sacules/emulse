@@ -5,7 +5,7 @@ use crate::app::App;
 use miniquad as mq;
 
 pub mod app;
-//pub mod darkroom;
+pub mod darkroom;
 pub mod lighttable;
 
 // When compiling natively:

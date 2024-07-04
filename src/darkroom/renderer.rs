@@ -1,217 +1,102 @@
 use cgmath::Vector2;
-use eframe::{
-    egui_wgpu,
-    wgpu::{self, include_wgsl, util::DeviceExt},
-};
+use miniquad as mq;
 
-use crate::darkroom::uniform::FragmentUniform;
+//use crate::darkroom::uniform::FragmentUniform;
+use crate::darkroom::texture::Texture;
 use crate::darkroom::vertex::Vertex;
-use crate::darkroom::{texture::Texture, uniform::VertexUniform};
 
 pub struct Renderer {
-    pipeline: wgpu::RenderPipeline,
-    texture_bind_group: Option<wgpu::BindGroup>,
-    frag_uniform_buffer: wgpu::Buffer,
-    frag_uniform_bind_group: wgpu::BindGroup,
-    vert_uniform_buffer: wgpu::Buffer,
-    vert_uniform_bind_group: wgpu::BindGroup,
+    pipeline: mq::Pipeline,
+    bindings: mq::Bindings,
 }
 
 impl Renderer {
-    pub fn new(wgpu: &egui_wgpu::RenderState) -> Self {
-        let layout = wgpu
-            .device
-            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                label: Some("Image renderer pipeline layout"),
-                bind_group_layouts: &[
-                    &Texture::get_bind_group_layout(&wgpu.device),
-                    &VertexUniform::get_bind_group_layout(&wgpu.device),
-                    &FragmentUniform::get_bind_group_layout(&wgpu.device),
-                ],
-                push_constant_ranges: &[],
-            });
+    pub fn new(mq_ctx: &mut mq::Context) -> Self {
+        let vertex_buffer = get_vertex_buffer(mq_ctx, -1.0, -1.0, 1.0, 1.0);
 
-        let shaders = wgpu
-            .device
-            .create_shader_module(include_wgsl!("shaders.wgsl"));
-
-        let pipeline = wgpu
-            .device
-            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: Some("Image render pipeline"),
-                layout: Some(&layout),
-                vertex: wgpu::VertexState {
-                    module: &shaders,
-                    entry_point: "vs_main",
-                    buffers: &[Vertex::desc()],
-                },
-                fragment: Some(wgpu::FragmentState {
-                    module: &shaders,
-                    entry_point: "fs_main",
-                    targets: &[Some(wgpu::ColorTargetState {
-                        format: wgpu::TextureFormat::Rgba8UnormSrgb,
-                        blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-                        write_mask: wgpu::ColorWrites::ALL,
-                    })],
-                }),
-                primitive: wgpu::PrimitiveState {
-                    topology: wgpu::PrimitiveTopology::TriangleList,
-                    strip_index_format: None,
-                    front_face: wgpu::FrontFace::Ccw,
-                    cull_mode: None,
-                    polygon_mode: wgpu::PolygonMode::Fill,
-                    unclipped_depth: false,
-                    conservative: false,
-                },
-                depth_stencil: None,
-                multisample: wgpu::MultisampleState {
-                    count: 1,
-                    mask: !0,
-                    alpha_to_coverage_enabled: false,
-                },
-                multiview: None,
-            });
-
-        let frag_uniform = FragmentUniform::default();
-        let frag_uniform_buffer =
-            wgpu.device
-                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                    label: Some("Fragment uniform buffer"),
-                    contents: bytemuck::cast_slice(&[frag_uniform]),
-                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                });
-
-        let frag_uniform_bind_group_layout = FragmentUniform::get_bind_group_layout(&wgpu.device);
-        let frag_uniform_bind_group = wgpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &frag_uniform_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: frag_uniform_buffer.as_entire_binding(),
-            }],
-            label: Some("Fragment uniform bind group"),
-        });
-
-        let vert_uniform = VertexUniform::default();
-        let vert_uniform_buffer =
-            wgpu.device
-                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                    label: Some("Vertex uniform buffer"),
-                    contents: bytemuck::cast_slice(&[vert_uniform]),
-                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                });
-
-        let vert_uniform_bind_group_layout = VertexUniform::get_bind_group_layout(&wgpu.device);
-        let vert_uniform_bind_group = wgpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &vert_uniform_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: vert_uniform_buffer.as_entire_binding(),
-            }],
-            label: Some("Vertex uniform bind group"),
-        });
-
-        Self {
-            pipeline,
-            texture_bind_group: None,
-            frag_uniform_buffer,
-            frag_uniform_bind_group,
-            vert_uniform_buffer,
-            vert_uniform_bind_group,
-        }
-    }
-
-    pub fn prepare(
-        &self,
-        queue: &wgpu::Queue,
-        frag_uniform: FragmentUniform,
-        vert_uniform: VertexUniform,
-    ) {
-        queue.write_buffer(
-            &self.frag_uniform_buffer,
-            0,
-            bytemuck::cast_slice(&[frag_uniform]),
+        #[rustfmt::skip]
+        let indices: &[u16] = &[
+        	0, 0,
+         	0, 0
+        ];
+        let index_buffer = mq_ctx.new_buffer(
+            mq::BufferType::IndexBuffer,
+            mq::BufferUsage::Immutable,
+            mq::BufferSource::slice(indices),
         );
-        queue.write_buffer(
-            &self.vert_uniform_buffer,
-            0,
-            bytemuck::cast_slice(&[vert_uniform]),
+
+        let bindings = mq::Bindings {
+            vertex_buffers: vec![vertex_buffer],
+            index_buffer,
+            images: vec![],
+        };
+
+        let shader = mq_ctx
+            .new_shader(
+                mq::ShaderSource::Glsl {
+                    vertex: include_str!("shader_vert.glsl"),
+                    fragment: include_str!("shader_frag.glsl"),
+                },
+                mq::ShaderMeta {
+                    images: vec![],
+                    uniforms: mq::UniformBlockLayout {
+                        uniforms: vec![mq::UniformDesc::new("mvp", mq::UniformType::Mat4)],
+                    },
+                },
+            )
+            .unwrap();
+
+        let pipeline = mq_ctx.new_pipeline(
+            &[mq::BufferLayout {
+                stride: indices.len() as i32,
+                ..Default::default()
+            }],
+            &[
+                mq::VertexAttribute::new("pos", mq::VertexFormat::Float3),
+                mq::VertexAttribute::new("color0", mq::VertexFormat::Float4),
+            ],
+            shader,
+            mq::PipelineParams {
+                depth_test: mq::Comparison::LessOrEqual,
+                depth_write: true,
+                ..Default::default()
+            },
         );
+
+        Self { pipeline, bindings }
     }
 
     pub fn render(
         &mut self,
-        wgpu: &egui_wgpu::RenderState,
+        mq_ctx: &mut mq::Context,
         input_texture: &Texture,
         output_texture: &Texture,
-    ) {
-        let texture_bind_group = self.texture_bind_group.get_or_insert_with(|| {
-            wgpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("Texture bind group"),
-                layout: &Texture::get_bind_group_layout(&wgpu.device),
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&input_texture.view),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::Sampler(
-                            input_texture.sampler.as_ref().unwrap(),
-                        ),
-                    },
-                ],
-            })
-        });
+    ) -> egui::TextureId {
+        let pass = mq_ctx.new_render_pass(input_texture.id, Some(output_texture.id));
 
-        let vertex_buffer = get_vertex_buffer(&wgpu.device, -1.0, -1.0, 1.0, 1.0);
+        mq_ctx.begin_pass(Some(pass), mq::PassAction::clear_color(0.0, 0.0, 0.0, 0.0));
+        mq_ctx.apply_pipeline(&self.pipeline);
+        //mq_ctx.apply_uniforms(mq::UniformsSource::table(data));
+        mq_ctx.draw(0, 6, 1);
+        mq_ctx.end_render_pass();
 
-        let mut encoder = wgpu
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Image renderer encoder"),
-            });
+        // create egui TextureId from Miniquad GL texture Id
+        let raw_id = match unsafe { mq_ctx.texture_raw_id(output_texture.id) } {
+            mq::RawId::OpenGl(id) => id as u64,
+        };
 
-        {
-            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Image renderer render pass descriptor"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &output_texture.view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.0,
-                            g: 0.0,
-                            b: 0.0,
-                            a: 0.0,
-                        }),
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                timestamp_writes: None,
-                depth_stencil_attachment: None,
-                occlusion_query_set: None,
-            });
-
-            pass.set_pipeline(&self.pipeline);
-            pass.set_bind_group(0, texture_bind_group, &[]);
-            pass.set_bind_group(1, &self.vert_uniform_bind_group, &[]);
-            pass.set_bind_group(2, &self.frag_uniform_bind_group, &[]);
-            pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-            pass.draw(0..6, 0..1);
-        }
-
-        let command_buffer = encoder.finish();
-        wgpu.queue.submit([command_buffer]);
+        egui::TextureId::User(raw_id)
     }
 }
 
 fn get_vertex_buffer(
-    device: &wgpu::Device,
+    mq_ctx: &mut mq::Context,
     start_x: f32,
     start_y: f32,
     end_x: f32,
     end_y: f32,
-) -> wgpu::Buffer {
+) -> mq::BufferId {
+    // Draw a rectangle
     let texture_cords = (
         Vector2::new(0.0, 0.0),
         Vector2::new(0.0, 1.0),
@@ -229,9 +114,9 @@ fn get_vertex_buffer(
         Vertex::new(end_x, start_y, texture_cords.3.x, texture_cords.3.y),
     ];
 
-    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Image Vertex Buffer"),
-        contents: bytemuck::cast_slice(shape.as_slice()),
-        usage: wgpu::BufferUsages::VERTEX,
-    })
+    mq_ctx.new_buffer(
+        mq::BufferType::VertexBuffer,
+        mq::BufferUsage::Immutable,
+        mq::BufferSource::slice(shape.as_slice()),
+    )
 }

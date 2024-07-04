@@ -13,11 +13,12 @@ egui = { version = "0.27.0" }
 log = "0.4"
 image = { version = "0.24.0", features = ["jpeg", "tiff", "bmp", "rayon"] }
 #bytemuck = { version = "1.16.0", features = ["derive"] }
-#cgmath = { version = "0.18.0", features = ["mint", "swizzle"] }
+cgmath = { version = "0.18.0", features = ["mint", "swizzle"] }
 egui_extras = { version = "*", features = ["all_loaders", "image", "file"] }
 egui_grid = "0.5.1"
 miniquad = "=0.4.0"
 egui_miniquad = { git = "https://github.com/not-fl3/egui-miniquad.git", branch = "master", package = "egui-miniquad" }
+bytemuck = { version = "1.16.1", features = ["bytemuck_derive", "derive"] }
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
