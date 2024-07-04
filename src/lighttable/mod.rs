@@ -1,13 +1,11 @@
 pub struct LightTable {}
 
 impl LightTable {
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new() -> Self {
         Self {}
     }
-}
 
-impl eframe::App for LightTable {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    pub fn update(&mut self, ctx: &egui::Context) {
         let test_images = [
             "file://test/roll/01.jpg",
             "file://test/roll/02.jpg",
