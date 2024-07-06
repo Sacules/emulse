@@ -381,6 +381,7 @@ dependencies = [
  "image",
  "log",
  "miniquad",
+ "mut-rc",
  "wasm-bindgen-futures",
 ]
 
@@ -762,6 +763,12 @@ name = "mint"
 version = "0.5.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e53debba6bda7a793e5f99b8dacf19e626084f525f7829104ba9898f367d85ff"
+
+[[package]]
+name = "mut-rc"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a107035b211a77170a01f06f7773853c414edb4991f9327550af113a51be563f"
 
 [[package]]
 name = "ndk-sys"

@@ -19,6 +19,7 @@ egui_grid = "0.5.1"
 miniquad = "=0.4.0"
 egui_miniquad = { git = "https://github.com/not-fl3/egui-miniquad.git", branch = "master", package = "egui-miniquad" }
 bytemuck = { version = "1.16.1", features = ["bytemuck_derive", "derive"] }
+mut-rc = "0.1.2"
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
