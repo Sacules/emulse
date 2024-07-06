@@ -15,6 +15,8 @@ fn main() {
 
     let conf = mq::conf::Conf {
         high_dpi: true,
+        window_width: 1280,
+        window_height: 720,
         ..Default::default()
     };
 

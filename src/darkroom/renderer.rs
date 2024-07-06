@@ -1,7 +1,4 @@
-use std::mem::size_of;
-
-use cgmath::Vector2;
-use miniquad as mq;
+use miniquad::{self as mq, TextureId};
 
 //use crate::darkroom::uniform::FragmentUniform;
 use crate::darkroom::texture::Texture;
@@ -34,7 +31,7 @@ impl Renderer {
                     fragment: include_str!("shader_frag.glsl"),
                 },
                 mq::ShaderMeta {
-                    images: vec![],
+                    images: vec!["tex".to_string()],
                     uniforms: mq::UniformBlockLayout { uniforms: vec![] },
                 },
             )
@@ -50,8 +47,9 @@ impl Renderer {
             ],
             shader,
             mq::PipelineParams {
-                depth_test: mq::Comparison::LessOrEqual,
-                depth_write: true,
+                depth_write: false,
+                primitive_type: mq::PrimitiveType::Triangles,
+                cull_face: mq::CullFace::Nothing,
                 ..Default::default()
             },
         );
@@ -63,22 +61,18 @@ impl Renderer {
         }
     }
 
-    pub fn render(
-        &mut self,
-        mq_ctx: &mut mq::Context,
-        input_texture: &Texture,
-        output_texture: &Texture,
-    ) {
+    pub fn render(&mut self, mq_ctx: &mut mq::Context, input_texture_id: mq::TextureId) {
         let bindings = mq::Bindings {
             vertex_buffers: vec![self.vertex_buffer],
             index_buffer: self.index_buffer,
-            images: vec![input_texture.id],
+            images: vec![input_texture_id],
         };
 
-        mq_ctx.begin_default_pass(mq::PassAction::clear_color(0.0, 0.0, 0.0, 0.0));
+        let pass = mq_ctx.new_render_pass(input_texture_id, None);
+        mq_ctx.begin_pass(Some(pass), mq::PassAction::clear_color(0.2, 0.0, 0.0, 1.0));
         mq_ctx.apply_pipeline(&self.pipeline);
         mq_ctx.apply_bindings(&bindings);
-        //mq_ctx.apply_uniforms(mq::UniformsSource::table(data));
+        mq_ctx.apply_uniforms(mq::UniformsSource::table(&input_texture_id));
         mq_ctx.draw(0, 6, 1);
         mq_ctx.end_render_pass();
 

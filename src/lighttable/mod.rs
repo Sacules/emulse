@@ -1,10 +1,14 @@
-use egui::{TextureHandle, TextureId};
+use egui::TextureHandle;
 use image::DynamicImage;
+use mut_rc::MutRc;
 use std::collections::HashMap;
+
+use crate::app::EmulseState;
 
 pub struct LightTable {
     pub images: Vec<DynamicImage>,
     pub texture_map: HashMap<String, TextureHandle>,
+    state: MutRc<EmulseState>,
 }
 
 const TEST_IMAGES: [&str; 12] = [
@@ -23,7 +27,7 @@ const TEST_IMAGES: [&str; 12] = [
 ];
 
 impl LightTable {
-    pub fn new() -> Self {
+    pub fn new(state: MutRc<EmulseState>) -> Self {
         let mut images = Vec::new();
 
         for img in TEST_IMAGES {
@@ -33,6 +37,7 @@ impl LightTable {
 
         Self {
             images,
+            state,
             texture_map: HashMap::new(),
         }
     }
@@ -117,11 +122,21 @@ impl LightTable {
             let image = egui::Image::new(handle)
                 .show_loading_spinner(true)
                 .maintain_aspect_ratio(true)
+                .sense(egui::Sense {
+                    click: true,
+                    drag: false,
+                    focusable: true,
+                })
                 .fit_to_exact_size((176.0, 176.0).into());
             let resp = f.content_ui.add(image);
 
             if resp.hovered() {
                 f.frame.fill = egui::Color32::GRAY;
+            }
+
+            if resp.double_clicked() {
+                self.state
+                    .with_mut(|state| state.selected_image_path = path.to_string());
             }
 
             f.content_ui

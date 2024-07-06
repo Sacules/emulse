@@ -10,9 +10,8 @@ use crate::darkroom::{
 };
 
 use cgmath::{Angle, Rad};
-use egui::{TextureId, Vec2};
-use image::GenericImageView;
-use miniquad as mq;
+use egui::{TextureHandle, Vec2};
+use miniquad::{self as mq, TextureId};
 
 /// The main object holding the app's state
 pub struct Darkroom {
@@ -23,12 +22,12 @@ pub struct Darkroom {
     pub renderer: Option<Renderer>,
 
     /// The main texture loaded into the GPU for editing, not shown
-    input_texture: Option<Texture>,
+    input_texture: Option<TextureId>,
 
     /// The texture that's shown on screen after the render pass
     output_texture: Option<Texture>,
 
-    pub output_texture_id: Option<TextureId>,
+    pub output_texture_id: Option<egui::TextureId>,
 
     /// A way to parametrize the shaders from the UI
     frag_uniform: FragmentUniform,
@@ -56,26 +55,32 @@ impl Darkroom {
         }
     }
 
-    pub fn prepare(&mut self, filename: String, mq_ctx: &mut mq::Context) {
-        let data = image::open(filename).unwrap();
-        let dimensions = data.dimensions();
-
-        let input_texture = Texture::input(mq_ctx, data);
-        let output_texture = Texture::output(mq_ctx, dimensions);
+    pub fn prepare(&mut self, mq_ctx: &mut mq::Context, texture_id: egui::TextureId) {
+        //let input_texture = Texture::input(mq_ctx, data);
+        //let output_texture = Texture::output(mq_ctx, dimensions);
 
         self.renderer = Some(Renderer::new(mq_ctx));
-        self.input_texture = Some(input_texture);
-        self.output_texture = Some(output_texture);
+        self.input_texture = match texture_id {
+            egui::TextureId::Managed(id) => {
+                // For some reason OpenGL expects u32 for the texture IDs,
+                // but egui uses u64 instead
+                let raw_id = mq::RawId::OpenGl(id.try_into().expect("couldn't cast"));
+                Some(mq::TextureId::from_raw_id(raw_id))
+            }
+            _ => Some(mq::TextureId::from_raw_id(mq::RawId::OpenGl(1))),
+        };
+
+        //self.output_texture = Some(output_texture);
+        self.output_texture_id = Some(texture_id);
         self.ready = true;
     }
 
     pub fn update(&mut self, mq_ctx: &mut mq::Context) {
         // Apply filters to the current image
-        self.renderer.as_mut().unwrap().render(
-            mq_ctx,
-            &self.input_texture.as_ref().unwrap(),
-            &self.output_texture.as_ref().unwrap(),
-        );
+        self.renderer
+            .as_mut()
+            .unwrap()
+            .render(mq_ctx, self.input_texture.unwrap());
     }
 
     pub fn ui(&mut self, ctx: &egui::Context) {
@@ -116,7 +121,7 @@ impl Darkroom {
             });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            let (mut width, mut height) = (0, 0);
+            let (mut width, mut height) = (1200, 800);
             if let Some(output_texture) = self.output_texture.as_ref() {
                 (width, height) = output_texture.size;
             }
@@ -155,11 +160,9 @@ impl Darkroom {
                             .maintain_aspect_ratio(true)
                             .fit_to_fraction((self.zoom_factor, self.zoom_factor).into());
 
-                        ctx.debug_text(format!("{:?}", id));
                         ui.add(img);
                     }
                 });
-                ctx.texture_ui(ui);
             });
         });
     }

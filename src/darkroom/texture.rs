@@ -1,5 +1,5 @@
 use image::{DynamicImage, GenericImageView};
-use miniquad::{self as mq, TextureKind, TextureParams};
+use miniquad::{self as mq, TextureParams};
 
 /// A representation of an image in the GPU
 pub struct Texture {

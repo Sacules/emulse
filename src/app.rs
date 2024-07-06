@@ -1,13 +1,28 @@
+use mut_rc::MutRc;
 use std::env;
+
 use {egui_miniquad as egui_mq, miniquad as mq};
 
 use crate::darkroom::Darkroom;
 use crate::lighttable::LightTable;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug, Clone)]
 enum CurrentView {
     LightTable,
     Darkroom,
+}
+
+#[derive(Debug, Clone)]
+pub struct EmulseState {
+    pub selected_image_path: String,
+}
+
+impl Default for EmulseState {
+    fn default() -> Self {
+        Self {
+            selected_image_path: String::new(),
+        }
+    }
 }
 
 pub struct App {
@@ -20,6 +35,8 @@ pub struct App {
     current_view: CurrentView,
     light_table: LightTable,
     darkroom: Darkroom,
+
+    state: MutRc<EmulseState>,
 }
 
 impl App {
@@ -33,12 +50,16 @@ impl App {
         let mut mq_ctx = mq::window::new_rendering_backend();
         let egui_mq = egui_mq::EguiMq::new(&mut *mq_ctx);
 
+        let state = MutRc::new(EmulseState::default());
+        let light_table = LightTable::new(state.clone());
+
         Self {
             egui_mq,
             mq_ctx,
             current_view: CurrentView::LightTable,
             darkroom: Darkroom::new(),
-            light_table: LightTable::new(),
+            light_table,
+            state,
         }
     }
 }
@@ -48,8 +69,12 @@ impl mq::EventHandler for App {
         match self.current_view {
             CurrentView::Darkroom => {
                 if !self.darkroom.ready {
-                    self.darkroom
-                        .prepare("test/film-pos7.jpg".into(), &mut *self.mq_ctx);
+                    let handle = self
+                        .light_table
+                        .texture_map
+                        .get(&self.state.get_clone().unwrap().selected_image_path)
+                        .unwrap();
+                    self.darkroom.prepare(&mut *self.mq_ctx, handle.id());
                 }
             }
             CurrentView::LightTable => {}
@@ -68,7 +93,10 @@ impl mq::EventHandler for App {
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             let darkroom =
                                 ui.add(egui::Button::new(egui::RichText::new("Darkroom")));
-                            if darkroom.clicked() {
+                            if darkroom.clicked()
+                                && self.state.get_clone().unwrap().selected_image_path
+                                    != "".to_string()
+                            {
                                 //TODO: retrieve filename of current image
                                 self.current_view = CurrentView::Darkroom;
                             }
@@ -82,7 +110,6 @@ impl mq::EventHandler for App {
                     });
                 });
 
-            //TODO: add panels before and leave this only to the main one?
             match self.current_view {
                 CurrentView::Darkroom => self.darkroom.ui(ctx),
                 CurrentView::LightTable => self.light_table.ui(ctx),
