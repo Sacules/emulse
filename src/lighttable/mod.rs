@@ -103,7 +103,7 @@ impl LightTable {
         path: &str,
         img: &DynamicImage,
     ) {
-        if !self.texture_map.contains_key(&path.to_string()) {
+        if !self.texture_map.contains_key(path) {
             let bytes = img.to_rgba8();
             let data = egui::ColorImage::from_rgba_unmultiplied(
                 [img.width() as usize, img.height() as usize],
@@ -114,7 +114,7 @@ impl LightTable {
             self.texture_map.insert(path.to_string(), handle);
         }
 
-        let handle = self.texture_map.get(&path.to_string()).unwrap();
+        let handle = self.texture_map.get(path).unwrap();
 
         let mut f = egui::Frame::default().inner_margin(32.0).begin(ui);
         f.frame.fill = egui::Color32::DARK_GRAY;
@@ -135,7 +135,8 @@ impl LightTable {
             }
 
             if resp.double_clicked() {
-                self.state
+                let _ = self
+                    .state
                     .with_mut(|state| state.selected_image_path = path.to_string());
             }
 

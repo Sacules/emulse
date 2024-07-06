@@ -1,7 +1,5 @@
-use miniquad::{self as mq, TextureId};
+use miniquad as mq;
 
-//use crate::darkroom::uniform::FragmentUniform;
-use crate::darkroom::texture::Texture;
 use crate::darkroom::vertex::Vertex;
 
 pub struct Renderer {

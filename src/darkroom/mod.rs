@@ -1,17 +1,15 @@
+#![allow(clippy::new_without_default)]
+
 pub mod renderer;
 pub mod texture;
 pub mod uniform;
 pub mod vertex;
 
-use crate::darkroom::{
-    renderer::Renderer,
-    texture::Texture,
-    uniform::{FragmentUniform, VertexUniform},
-};
+use crate::darkroom::{renderer::Renderer, texture::Texture, uniform::FragmentUniform};
 
 use cgmath::{Angle, Rad};
-use egui::{TextureHandle, Vec2};
-use miniquad::{self as mq, TextureId};
+use egui::Vec2;
+use miniquad as mq;
 
 /// The main object holding the app's state
 pub struct Darkroom {
@@ -22,7 +20,7 @@ pub struct Darkroom {
     pub renderer: Option<Renderer>,
 
     /// The main texture loaded into the GPU for editing, not shown
-    input_texture: Option<TextureId>,
+    input_texture: Option<mq::TextureId>,
 
     /// The texture that's shown on screen after the render pass
     output_texture: Option<Texture>,
@@ -31,8 +29,7 @@ pub struct Darkroom {
 
     /// A way to parametrize the shaders from the UI
     frag_uniform: FragmentUniform,
-    vert_uniform: VertexUniform,
-
+    //vert_uniform: VertexUniform,
     /// How much to rotate the image, in degrees
     rotation_angle: Rad<f32>,
 
@@ -49,7 +46,7 @@ impl Darkroom {
             output_texture: None,
             output_texture_id: None,
             frag_uniform: FragmentUniform::default(),
-            vert_uniform: VertexUniform::default(),
+            //vert_uniform: VertexUniform::default(),
             rotation_angle: Rad(0.0),
             zoom_factor: 1.0,
         }

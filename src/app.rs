@@ -12,17 +12,9 @@ enum CurrentView {
     Darkroom,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct EmulseState {
     pub selected_image_path: String,
-}
-
-impl Default for EmulseState {
-    fn default() -> Self {
-        Self {
-            selected_image_path: String::new(),
-        }
-    }
 }
 
 pub struct App {
@@ -37,6 +29,12 @@ pub struct App {
     darkroom: Darkroom,
 
     state: MutRc<EmulseState>,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl App {
@@ -95,7 +93,7 @@ impl mq::EventHandler for App {
                                 ui.add(egui::Button::new(egui::RichText::new("Darkroom")));
                             if darkroom.clicked()
                                 && self.state.get_clone().unwrap().selected_image_path
-                                    != "".to_string()
+                                    != String::new()
                             {
                                 //TODO: retrieve filename of current image
                                 self.current_view = CurrentView::Darkroom;
