@@ -20,6 +20,8 @@ egui_miniquad = { git = "https://github.com/not-fl3/egui-miniquad.git", branch =
 bytemuck = { version = "1.16.1", features = ["bytemuck_derive", "derive"] }
 mut-rc = "0.1.2"
 rayon = "1.10.0"
+polodb_core = "4.4.1"
+serde = { version = "1.0.204", features = ["derive"] }
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

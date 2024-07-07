@@ -1,5 +1,7 @@
+pub mod db;
 pub mod image;
 
+use db::Database;
 use egui::TextureHandle;
 use mut_rc::MutRc;
 use std::collections::HashMap;
@@ -11,15 +13,18 @@ use crate::lighttable::image::Image;
 pub struct LightTable {
     pub images: Vec<Arc<Image>>,
     pub texture_map: HashMap<String, TextureHandle>,
+
     state: MutRc<EmulseState>,
+    db: Database,
 }
 
 impl LightTable {
     pub fn new(state: MutRc<EmulseState>) -> Self {
-        let images = image::load_from_dir("test/roll".into()).unwrap();
+        let db = Database::new();
 
         Self {
-            images,
+            db,
+            images: vec![],
             state,
             texture_map: HashMap::new(),
         }
@@ -27,24 +32,18 @@ impl LightTable {
 
     pub fn ui(&mut self, ctx: &egui::Context) {
         egui::SidePanel::left("left_panel")
-            .max_width(268.0)
+            .min_width(200.0)
             .show(ctx, |ui| {
                 ui.vertical(|ui| {
-                    ui.collapsing("Library", |ui| {
-                        ui.label("random");
-                        ui.label("folder");
-                        ui.label("johncena");
-                    });
-                });
-            });
+                    ui.add_space(8.0);
 
-        egui::SidePanel::right("right_panel")
-            .max_width(300.0)
-            .show_animated(ctx, true, |ui| {
-                ui.vertical(|ui| {
-                    ui.collapsing("Selection", |ui| {
-                        ui.label("rotate 90°");
-                        ui.label("rotate -90°");
+                    egui::CollapsingHeader::new("Library").show_unindented(ui, |ui| {
+                        ui.add_space(8.0);
+                        ui.collapsing("test", |ui| {
+                            ui.label("roll");
+                        });
+                        ui.add_space(8.0);
+                        ui.button("Import");
                     });
                 });
             });
@@ -56,7 +55,7 @@ impl LightTable {
                     .show(ui, |ui| {
                         let mut grid_builder = egui_grid::GridBuilder::new().spacing(16.0, 16.0);
                         for i in 0..self.images.len() {
-                            if i % 5 == 0 {
+                            if i % 4 == 0 {
                                 grid_builder =
                                     grid_builder.new_row(egui_extras::Size::exact(250.0));
                             }
@@ -80,6 +79,7 @@ impl LightTable {
     }
 
     fn image_slide(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, img: &Image) {
+        //TODO: move this to another function, only leave ui stuff here
         if !self.texture_map.contains_key(img.path.as_str()) {
             // TODO: dynamically infer this, as some files can be in 16 bit
             let bytes = img.data.as_rgb8().unwrap();
