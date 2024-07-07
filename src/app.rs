@@ -6,16 +6,11 @@ use {egui_miniquad as egui_mq, miniquad as mq};
 use crate::darkroom::Darkroom;
 use crate::lighttable::LightTable;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum CurrentView {
+    #[default]
     LightTable,
     Darkroom,
-}
-
-impl Default for CurrentView {
-    fn default() -> Self {
-        CurrentView::LightTable
-    }
 }
 
 #[derive(Debug, Clone, Default)]
