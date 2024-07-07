@@ -1,49 +1,22 @@
+pub mod image;
+
 use egui::TextureHandle;
-use image::DynamicImage;
 use mut_rc::MutRc;
-use std::{collections::HashMap, rc::Rc};
+use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::app::{CurrentView, EmulseState};
-
-#[derive(Debug, Clone)]
-pub struct Image {
-    data: DynamicImage,
-    path: String,
-}
+use crate::lighttable::image::Image;
 
 pub struct LightTable {
-    pub images: Vec<Rc<Image>>,
+    pub images: Vec<Arc<Image>>,
     pub texture_map: HashMap<String, TextureHandle>,
     state: MutRc<EmulseState>,
 }
 
-const TEST_IMAGES: [&str; 12] = [
-    "test/roll/01.tif",
-    "test/roll/02.tif",
-    "test/roll/03.tif",
-    "test/roll/04.tif",
-    "test/roll/05.tif",
-    "test/roll/06.tif",
-    "test/roll/07.tif",
-    "test/roll/08.tif",
-    "test/roll/09.tif",
-    "test/roll/10.tif",
-    "test/roll/11.tif",
-    "test/roll/12.tif",
-];
-
 impl LightTable {
     pub fn new(state: MutRc<EmulseState>) -> Self {
-        let mut images = Vec::new();
-
-        for img in TEST_IMAGES {
-            let data = image::open(img).unwrap();
-            let img = Rc::new(Image {
-                data,
-                path: img.to_string(),
-            });
-            images.push(img);
-        }
+        let images = image::load_from_dir("test/roll".into()).unwrap();
 
         Self {
             images,
@@ -108,12 +81,12 @@ impl LightTable {
 
     fn image_slide(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, img: &Image) {
         if !self.texture_map.contains_key(img.path.as_str()) {
-            let bytes = img.data.to_rgba8();
-            let data = egui::ColorImage::from_rgba_unmultiplied(
+            // TODO: dynamically infer this, as some files can be in 16 bit
+            let bytes = img.data.as_rgb8().unwrap();
+            let data = egui::ColorImage::from_rgb(
                 [img.data.width() as usize, img.data.height() as usize],
-                &bytes.into_flat_samples().samples,
+                &bytes,
             );
-
             let handle = ctx.load_texture(img.path.clone(), data, Default::default());
             self.texture_map.insert(img.path.to_string(), handle);
         }

@@ -11,8 +11,7 @@ rust-version = "1.72"
 [dependencies]
 egui = { version = "0.27.0" }
 log = "0.4"
-image = { version = "0.24.0", features = ["jpeg", "tiff", "bmp", "rayon"] }
-#bytemuck = { version = "1.16.0", features = ["derive"] }
+image = { version = "0.24.0", features = ["jpeg", "tiff", "bmp"] }
 cgmath = { version = "0.18.0", features = ["mint", "swizzle"] }
 egui_extras = { version = "*", features = ["all_loaders", "image", "file"] }
 egui_grid = "0.5.1"
@@ -20,6 +19,7 @@ miniquad = "=0.4.0"
 egui_miniquad = { git = "https://github.com/not-fl3/egui-miniquad.git", branch = "master", package = "egui-miniquad" }
 bytemuck = { version = "1.16.1", features = ["bytemuck_derive", "derive"] }
 mut-rc = "0.1.2"
+rayon = "1.10.0"
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -43,15 +43,4 @@ codegen-backend = "cranelift"
 
 # Optimize all dependencies even in debug builds:
 [profile.dev.package."*"]
-opt-level = 2
-
-
-[patch.crates-io]
-
-# If you want to use the bleeding edge version of egui and eframe:
-# egui = { git = "https://github.com/emilk/egui", branch = "master" }
-# eframe = { git = "https://github.com/emilk/egui", branch = "master" }
-
-# If you fork https://github.com/emilk/egui you can test with:
-# egui = { path = "../egui/crates/egui" }
-# eframe = { path = "../egui/crates/eframe" }
+opt-level = 1
