@@ -18,18 +18,18 @@ pub struct LightTable {
 }
 
 const TEST_IMAGES: [&str; 12] = [
-    "test/roll/01.jpg",
-    "test/roll/02.jpg",
-    "test/roll/03.jpg",
-    "test/roll/04.jpg",
-    "test/roll/05.jpg",
-    "test/roll/06.jpg",
-    "test/roll/07.jpg",
-    "test/roll/08.jpg",
-    "test/roll/09.jpg",
-    "test/roll/10.jpg",
-    "test/roll/11.jpg",
-    "test/roll/12.jpg",
+    "test/roll/01.tif",
+    "test/roll/02.tif",
+    "test/roll/03.tif",
+    "test/roll/04.tif",
+    "test/roll/05.tif",
+    "test/roll/06.tif",
+    "test/roll/07.tif",
+    "test/roll/08.tif",
+    "test/roll/09.tif",
+    "test/roll/10.tif",
+    "test/roll/11.tif",
+    "test/roll/12.tif",
 ];
 
 impl LightTable {
@@ -139,7 +139,6 @@ impl LightTable {
             }
 
             if resp.double_clicked() {
-                dbg!(handle.id());
                 let _ = self
                     .state
                     .with_mut(|state| state.selected_image_path = img.path.clone());
