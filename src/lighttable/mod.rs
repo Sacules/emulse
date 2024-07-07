@@ -85,7 +85,7 @@ impl LightTable {
             let bytes = img.data.as_rgb8().unwrap();
             let data = egui::ColorImage::from_rgb(
                 [img.data.width() as usize, img.data.height() as usize],
-                &bytes,
+                bytes,
             );
             let handle = ctx.load_texture(img.path.clone(), data, Default::default());
             self.texture_map.insert(img.path.to_string(), handle);
