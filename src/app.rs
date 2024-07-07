@@ -1,3 +1,5 @@
+#![allow(clippy::new_without_default)]
+
 use mut_rc::MutRc;
 use {egui_miniquad as egui_mq, miniquad as mq};
 

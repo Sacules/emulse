@@ -10,7 +10,6 @@ use crate::darkroom::{renderer::Renderer, uniform::FragmentUniform};
 use cgmath::{Angle, Rad};
 use egui::Vec2;
 use miniquad as mq;
-use std::rc::Rc;
 
 pub struct Darkroom {
     /// A handle to the image processing renderer
@@ -21,9 +20,6 @@ pub struct Darkroom {
 
     /// The size of the image
     input_texture_dimensions: (f32, f32),
-
-    /// The main texture loaded into the GPU for editing, not shown
-    input_texture_id: mq::TextureId,
 
     /// The texture that's shown on screen after the render pass
     output_texture_id: egui::TextureId,
@@ -41,10 +37,9 @@ impl Darkroom {
         let id = texture_handle.id();
 
         Self {
-            renderer: Renderer::new(mq_ctx, egui_to_mq_texture_id(id), dimensions.into()),
+            renderer: Renderer::new(mq_ctx, egui_to_mq_texture_id(id), dimensions),
             frag_uniform: FragmentUniform::default(),
             input_texture_dimensions: (dimensions[0] as f32, dimensions[1] as f32),
-            input_texture_id: egui_to_mq_texture_id(id),
             output_texture_id: id,
             rotation_angle: Rad(0.0),
             zoom_factor: 1.0,
