@@ -13,7 +13,7 @@ use miniquad as mq;
 
 pub struct Darkroom {
     /// A handle to the image processing renderer
-    pub renderer: Renderer,
+    renderer: Renderer,
 
     /// A way to parametrize the shaders from the UI
     frag_uniform: FragmentUniform,
@@ -58,7 +58,8 @@ impl Darkroom {
                 ui.vertical(|ui| {
                     ui.label("contrast");
                     ui.add(
-                        egui::Slider::new(&mut self.frag_uniform.contrast, -100.0..=100.0)
+                        egui::Slider::new(&mut self.frag_uniform.contrast, -30.0..=30.0)
+                            .step_by(1.0)
                             .trailing_fill(true),
                     );
 

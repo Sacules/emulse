@@ -85,7 +85,7 @@ impl mq::EventHandler for App {
             egui_extras::install_image_loaders(ctx);
 
             egui::TopBottomPanel::top("nav_bar")
-                .exact_height(64.0)
+                .exact_height(48.0)
                 .show(ctx, |ui| {
                     ui.horizontal_centered(|ui| {
                         ui.heading("Emulse");

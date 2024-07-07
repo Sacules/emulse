@@ -1,7 +1,7 @@
 #version 330 core
 
-layout(location = 0) in vec2 position;
-layout(location = 1) in vec2 tex_coords;
+in vec2 position;
+in vec2 tex_coords;
 
 out vec2 v_tex_coords;
 

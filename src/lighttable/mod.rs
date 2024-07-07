@@ -1,12 +1,18 @@
 use egui::TextureHandle;
 use image::DynamicImage;
 use mut_rc::MutRc;
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 use crate::app::EmulseState;
 
+#[derive(Debug, Clone)]
+pub struct Image {
+    data: DynamicImage,
+    path: String,
+}
+
 pub struct LightTable {
-    pub images: Vec<DynamicImage>,
+    pub images: Vec<Rc<Image>>,
     pub texture_map: HashMap<String, TextureHandle>,
     state: MutRc<EmulseState>,
 }
@@ -32,7 +38,11 @@ impl LightTable {
 
         for img in TEST_IMAGES {
             let data = image::open(img).unwrap();
-            images.push(data);
+            let img = Rc::new(Image {
+                data,
+                path: img.to_string(),
+            });
+            images.push(img);
         }
 
         Self {
@@ -40,57 +50,6 @@ impl LightTable {
             state,
             texture_map: HashMap::new(),
         }
-    }
-
-    fn image_slide(
-        &mut self,
-        ctx: &egui::Context,
-        ui: &mut egui::Ui,
-        path: &str,
-        img: &DynamicImage,
-    ) {
-        if !self.texture_map.contains_key(path) {
-            let bytes = img.to_rgba8();
-            let data = egui::ColorImage::from_rgba_unmultiplied(
-                [img.width() as usize, img.height() as usize],
-                &bytes.into_flat_samples().samples,
-            );
-
-            let handle = ctx.load_texture(path, data, Default::default());
-            self.texture_map.insert(path.to_string(), handle);
-        }
-
-        let handle = self.texture_map.get(path).unwrap();
-
-        let mut f = egui::Frame::default().inner_margin(32.0).begin(ui);
-        f.frame.fill = egui::Color32::DARK_GRAY;
-        {
-            let image = egui::Image::new(handle)
-                .show_loading_spinner(true)
-                .maintain_aspect_ratio(true)
-                .sense(egui::Sense {
-                    click: true,
-                    drag: false,
-                    focusable: true,
-                })
-                .fit_to_exact_size((176.0, 176.0).into());
-            let resp = f.content_ui.add(image);
-
-            if resp.hovered() {
-                f.frame.fill = egui::Color32::GRAY;
-            }
-
-            if resp.double_clicked() {
-                dbg!(handle.id());
-                let _ = self
-                    .state
-                    .with_mut(|state| state.selected_image_path = path.to_string());
-            }
-
-            f.content_ui
-                .label(egui::RichText::new(path).color(egui::Color32::WHITE));
-        }
-        f.end(ui);
     }
 
     pub fn ui(&mut self, ctx: &egui::Context) {
@@ -123,7 +82,7 @@ impl LightTable {
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
                         let mut grid_builder = egui_grid::GridBuilder::new().spacing(16.0, 16.0);
-                        for i in 0..TEST_IMAGES.len() {
+                        for i in 0..self.images.len() {
                             if i % 5 == 0 {
                                 grid_builder =
                                     grid_builder.new_row(egui_extras::Size::exact(250.0));
@@ -134,10 +93,10 @@ impl LightTable {
 
                         // Only show after preallocating enough space
                         grid_builder.show(ui, |mut grid| {
-                            for (i, img) in self.images.clone().into_iter().enumerate() {
+                            for img in self.images.clone() {
                                 grid.cell(|ui| {
                                     ui.centered_and_justified(|ui| {
-                                        self.image_slide(ctx, ui, TEST_IMAGES[i], &img);
+                                        self.image_slide(ctx, ui, &img);
                                     });
                                 });
                             }
@@ -145,5 +104,50 @@ impl LightTable {
                     });
             });
         });
+    }
+
+    fn image_slide(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, img: &Image) {
+        if !self.texture_map.contains_key(img.path.as_str()) {
+            let bytes = img.data.to_rgba8();
+            let data = egui::ColorImage::from_rgba_unmultiplied(
+                [img.data.width() as usize, img.data.height() as usize],
+                &bytes.into_flat_samples().samples,
+            );
+
+            let handle = ctx.load_texture(img.path.clone(), data, Default::default());
+            self.texture_map.insert(img.path.to_string(), handle);
+        }
+
+        let handle = self.texture_map.get(img.path.as_str()).unwrap();
+
+        let mut f = egui::Frame::default().inner_margin(32.0).begin(ui);
+        f.frame.fill = egui::Color32::DARK_GRAY;
+        {
+            let image = egui::Image::new(handle)
+                .show_loading_spinner(true)
+                .maintain_aspect_ratio(true)
+                .sense(egui::Sense {
+                    click: true,
+                    drag: false,
+                    focusable: true,
+                })
+                .fit_to_exact_size((176.0, 176.0).into());
+            let resp = f.content_ui.add(image);
+
+            if resp.hovered() {
+                f.frame.fill = egui::Color32::GRAY;
+            }
+
+            if resp.double_clicked() {
+                dbg!(handle.id());
+                let _ = self
+                    .state
+                    .with_mut(|state| state.selected_image_path = img.path.clone());
+            }
+
+            f.content_ui
+                .label(egui::RichText::new(img.path.as_str()).color(egui::Color32::WHITE));
+        }
+        f.end(ui);
     }
 }

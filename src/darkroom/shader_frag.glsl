@@ -5,9 +5,7 @@ out vec4 color;
 
 uniform sampler2D tex;
 
-uniform frag_uniform {
-    float contrast;
-};
+uniform float contrast;
 
 const float PI = 3.141592653589793238462643383279502884197169399375105820974944;
 const float max_value = 255.0;
