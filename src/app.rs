@@ -1,12 +1,9 @@
 use mut_rc::MutRc;
-use std::env;
-
 use {egui_miniquad as egui_mq, miniquad as mq};
 
 use crate::darkroom::Darkroom;
 use crate::lighttable::LightTable;
 
-#[derive(PartialEq, Debug, Clone)]
 enum CurrentView {
     LightTable,
     Darkroom,
@@ -25,37 +22,29 @@ pub struct App {
     mq_ctx: Box<dyn mq::RenderingBackend>,
 
     current_view: CurrentView,
+
     light_table: LightTable,
-    darkroom: Darkroom,
+    darkroom: Option<Darkroom>,
 
     state: MutRc<EmulseState>,
 }
 
-impl Default for App {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl App {
     pub fn new() -> Self {
-        let args: Vec<String> = env::args().collect();
-        let _filename = match args.len() {
-            1 => "".into(),
-            _ => args[1].clone(),
-        };
-
         let mut mq_ctx = mq::window::new_rendering_backend();
         let egui_mq = egui_mq::EguiMq::new(&mut *mq_ctx);
 
         let state = MutRc::new(EmulseState::default());
+
         let light_table = LightTable::new(state.clone());
+        let darkroom = None;
+        let current_view = CurrentView::LightTable;
 
         Self {
             egui_mq,
             mq_ctx,
-            current_view: CurrentView::LightTable,
-            darkroom: Darkroom::new(),
+            current_view,
+            darkroom,
             light_table,
             state,
         }
@@ -65,22 +54,24 @@ impl App {
 impl mq::EventHandler for App {
     fn update(&mut self) {
         match self.current_view {
-            CurrentView::Darkroom => {
-                if !self.darkroom.ready {
+            CurrentView::Darkroom => match &self.darkroom {
+                Some(_) => {}
+                None => {
                     let handle = self
                         .light_table
                         .texture_map
                         .get(&self.state.get_clone().unwrap().selected_image_path)
                         .unwrap();
-                    self.darkroom.prepare(&mut *self.mq_ctx, handle.id());
+
+                    self.darkroom = Some(Darkroom::new(self.mq_ctx.as_mut(), handle.to_owned()));
                 }
-            }
+            },
             CurrentView::LightTable => {}
         }
     }
 
     fn draw(&mut self) {
-        self.egui_mq.run(&mut *self.mq_ctx, |_, ctx| {
+        self.egui_mq.run(self.mq_ctx.as_mut(), |_, ctx| {
             egui_extras::install_image_loaders(ctx);
 
             egui::TopBottomPanel::top("nav_bar")
@@ -95,7 +86,6 @@ impl mq::EventHandler for App {
                                 && self.state.get_clone().unwrap().selected_image_path
                                     != String::new()
                             {
-                                //TODO: retrieve filename of current image
                                 self.current_view = CurrentView::Darkroom;
                             }
 
@@ -109,15 +99,22 @@ impl mq::EventHandler for App {
                 });
 
             match self.current_view {
-                CurrentView::Darkroom => self.darkroom.ui(ctx),
+                CurrentView::Darkroom => match &self.darkroom {
+                    Some(_d) => self.darkroom.as_mut().unwrap().ui(ctx),
+                    None => {}
+                },
                 CurrentView::LightTable => self.light_table.ui(ctx),
             }
         });
 
         self.egui_mq.draw(&mut *self.mq_ctx);
 
-        if self.current_view == CurrentView::Darkroom && self.darkroom.ready {
-            self.darkroom.update(&mut *self.mq_ctx);
+        match self.current_view {
+            CurrentView::Darkroom => match &self.darkroom {
+                Some(darkroom) => darkroom.update(&mut *self.mq_ctx),
+                None => {}
+            },
+            CurrentView::LightTable => {}
         }
 
         self.mq_ctx.commit_frame();

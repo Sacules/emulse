@@ -2,6 +2,7 @@ use miniquad as mq;
 
 use crate::darkroom::vertex::Vertex;
 
+#[derive(Copy, Clone)]
 pub struct Renderer {
     pipeline: mq::Pipeline,
     vertex_buffer: mq::BufferId,
@@ -59,7 +60,7 @@ impl Renderer {
         }
     }
 
-    pub fn render(&mut self, mq_ctx: &mut mq::Context, input_texture_id: mq::TextureId) {
+    pub fn render(&self, mq_ctx: &mut mq::Context, input_texture_id: mq::TextureId) {
         let bindings = mq::Bindings {
             vertex_buffers: vec![self.vertex_buffer],
             index_buffer: self.index_buffer,
@@ -73,15 +74,6 @@ impl Renderer {
         mq_ctx.apply_uniforms(mq::UniformsSource::table(&input_texture_id));
         mq_ctx.draw(0, 6, 1);
         mq_ctx.end_render_pass();
-
-        // create egui TextureId from Miniquad GL texture Id
-        /*
-        let raw_id = match unsafe { mq_ctx.texture_raw_id(output_texture.id) } {
-            mq::RawId::OpenGl(id) => id as u64,
-        };
-
-        egui::TextureId::User(raw_id)
-         */
     }
 }
 
