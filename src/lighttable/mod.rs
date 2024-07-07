@@ -81,6 +81,7 @@ impl LightTable {
             }
 
             if resp.double_clicked() {
+                dbg!(handle.id());
                 let _ = self
                     .state
                     .with_mut(|state| state.selected_image_path = path.to_string());

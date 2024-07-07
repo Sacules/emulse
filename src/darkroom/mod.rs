@@ -14,7 +14,7 @@ use std::rc::Rc;
 
 pub struct Darkroom {
     /// A handle to the image processing renderer
-    pub renderer: Rc<Renderer>,
+    pub renderer: Renderer,
 
     /// A way to parametrize the shaders from the UI
     frag_uniform: FragmentUniform,
@@ -40,30 +40,20 @@ impl Darkroom {
         let dimensions = texture_handle.size();
         let id = texture_handle.id();
 
-        let input_texture_id = match id {
-            egui::TextureId::Managed(id) => {
-                // For some reason OpenGL expects u32 for the texture IDs,
-                // but egui uses u64 instead
-                let raw_id = mq::RawId::OpenGl(id.try_into().expect("couldn't cast"));
-                mq::TextureId::from_raw_id(raw_id)
-            }
-            _ => mq::TextureId::from_raw_id(mq::RawId::OpenGl(1)),
-        };
-
         Self {
-            renderer: Renderer::new(mq_ctx).into(),
+            renderer: Renderer::new(mq_ctx, egui_to_mq_texture_id(id), dimensions.into()),
             frag_uniform: FragmentUniform::default(),
             input_texture_dimensions: (dimensions[0] as f32, dimensions[1] as f32),
-            input_texture_id,
+            input_texture_id: egui_to_mq_texture_id(id),
             output_texture_id: id,
             rotation_angle: Rad(0.0),
             zoom_factor: 1.0,
         }
     }
 
-    pub fn update(&self, mq_ctx: &mut mq::Context) {
+    pub fn update(&mut self, mq_ctx: &mut mq::Context) {
         // Apply filters to the current image
-        self.renderer.render(mq_ctx, self.input_texture_id);
+        self.output_texture_id = self.renderer.render(mq_ctx, self.frag_uniform);
     }
 
     pub fn ui(&mut self, ctx: &egui::Context) {
@@ -73,7 +63,7 @@ impl Darkroom {
                 ui.vertical(|ui| {
                     ui.label("contrast");
                     ui.add(
-                        egui::Slider::new(&mut self.frag_uniform.contrast, 0.9..=1.1)
+                        egui::Slider::new(&mut self.frag_uniform.contrast, -100.0..=100.0)
                             .trailing_fill(true),
                     );
 
@@ -137,5 +127,17 @@ impl Darkroom {
                 });
             });
         });
+    }
+}
+
+fn egui_to_mq_texture_id(from: egui::TextureId) -> mq::TextureId {
+    match from {
+        egui::TextureId::Managed(id) => {
+            // For some reason OpenGL expects u32 for the texture IDs,
+            // but egui uses u64 instead
+            let raw_id = mq::RawId::OpenGl(id.try_into().expect("couldn't cast"));
+            mq::TextureId::from_raw_id(raw_id)
+        }
+        _ => mq::TextureId::from_raw_id(mq::RawId::OpenGl(1)),
     }
 }

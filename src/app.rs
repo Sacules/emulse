@@ -64,6 +64,7 @@ impl mq::EventHandler for App {
                         .unwrap();
 
                     self.darkroom = Some(Darkroom::new(self.mq_ctx.as_mut(), handle.to_owned()));
+                    self.darkroom.as_mut().unwrap().update(self.mq_ctx.as_mut());
                 }
             },
             CurrentView::LightTable => {}
@@ -71,6 +72,13 @@ impl mq::EventHandler for App {
     }
 
     fn draw(&mut self) {
+        match self.current_view {
+            CurrentView::Darkroom => match &self.darkroom {
+                Some(_) => self.darkroom.as_mut().unwrap().update(&mut *self.mq_ctx),
+                None => {}
+            },
+            CurrentView::LightTable => {}
+        }
         self.egui_mq.run(self.mq_ctx.as_mut(), |_, ctx| {
             egui_extras::install_image_loaders(ctx);
 
@@ -100,7 +108,7 @@ impl mq::EventHandler for App {
 
             match self.current_view {
                 CurrentView::Darkroom => match &self.darkroom {
-                    Some(_d) => self.darkroom.as_mut().unwrap().ui(ctx),
+                    Some(_) => self.darkroom.as_mut().unwrap().ui(ctx),
                     None => {}
                 },
                 CurrentView::LightTable => self.light_table.ui(ctx),
@@ -108,15 +116,6 @@ impl mq::EventHandler for App {
         });
 
         self.egui_mq.draw(&mut *self.mq_ctx);
-
-        match self.current_view {
-            CurrentView::Darkroom => match &self.darkroom {
-                Some(darkroom) => darkroom.update(&mut *self.mq_ctx),
-                None => {}
-            },
-            CurrentView::LightTable => {}
-        }
-
         self.mq_ctx.commit_frame();
     }
 
