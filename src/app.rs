@@ -6,14 +6,22 @@ use {egui_miniquad as egui_mq, miniquad as mq};
 use crate::darkroom::Darkroom;
 use crate::lighttable::LightTable;
 
-enum CurrentView {
+#[derive(Debug, Clone)]
+pub enum CurrentView {
     LightTable,
     Darkroom,
+}
+
+impl Default for CurrentView {
+    fn default() -> Self {
+        CurrentView::LightTable
+    }
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct EmulseState {
     pub selected_image_path: String,
+    pub current_view: CurrentView,
 }
 
 pub struct App {
@@ -22,8 +30,6 @@ pub struct App {
 
     /// Renderer
     mq_ctx: Box<dyn mq::RenderingBackend>,
-
-    current_view: CurrentView,
 
     light_table: LightTable,
     darkroom: Option<Darkroom>,
@@ -40,12 +46,10 @@ impl App {
 
         let light_table = LightTable::new(state.clone());
         let darkroom = None;
-        let current_view = CurrentView::LightTable;
 
         Self {
             egui_mq,
             mq_ctx,
-            current_view,
             darkroom,
             light_table,
             state,
@@ -55,7 +59,7 @@ impl App {
 
 impl mq::EventHandler for App {
     fn update(&mut self) {
-        match self.current_view {
+        match self.state.get_clone().unwrap().current_view {
             CurrentView::Darkroom => match &self.darkroom {
                 Some(_) => {}
                 None => {
@@ -74,7 +78,7 @@ impl mq::EventHandler for App {
     }
 
     fn draw(&mut self) {
-        match self.current_view {
+        match self.state.get_clone().unwrap().current_view {
             CurrentView::Darkroom => match &self.darkroom {
                 Some(_) => self.darkroom.as_mut().unwrap().update(&mut *self.mq_ctx),
                 None => {}
@@ -96,19 +100,24 @@ impl mq::EventHandler for App {
                                 && self.state.get_clone().unwrap().selected_image_path
                                     != String::new()
                             {
-                                self.current_view = CurrentView::Darkroom;
+                                let _ = self
+                                    .state
+                                    .with_mut(|state| state.current_view = CurrentView::Darkroom);
                             }
 
                             let lighttable =
                                 ui.add(egui::Button::new(egui::RichText::new("Lighttable")));
                             if lighttable.clicked() {
-                                self.current_view = CurrentView::LightTable;
+                                self.darkroom = None;
+                                let _ = self
+                                    .state
+                                    .with_mut(|state| state.current_view = CurrentView::LightTable);
                             }
                         });
                     });
                 });
 
-            match self.current_view {
+            match self.state.get_clone().unwrap().current_view {
                 CurrentView::Darkroom => match &self.darkroom {
                     Some(_) => self.darkroom.as_mut().unwrap().ui(ctx),
                     None => {}
@@ -126,7 +135,7 @@ impl mq::EventHandler for App {
     }
 
     fn mouse_wheel_event(&mut self, dx: f32, dy: f32) {
-        self.egui_mq.mouse_wheel_event(dx, dy);
+        self.egui_mq.mouse_wheel_event(dx * 2.0, dy * 2.0);
     }
 
     fn mouse_button_down_event(&mut self, mb: mq::MouseButton, x: f32, y: f32) {

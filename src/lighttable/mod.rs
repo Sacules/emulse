@@ -3,7 +3,7 @@ use image::DynamicImage;
 use mut_rc::MutRc;
 use std::{collections::HashMap, rc::Rc};
 
-use crate::app::EmulseState;
+use crate::app::{CurrentView, EmulseState};
 
 #[derive(Debug, Clone)]
 pub struct Image {
@@ -139,9 +139,10 @@ impl LightTable {
             }
 
             if resp.double_clicked() {
-                let _ = self
-                    .state
-                    .with_mut(|state| state.selected_image_path = img.path.clone());
+                let _ = self.state.with_mut(|state| {
+                    state.selected_image_path = img.path.clone();
+                    state.current_view = CurrentView::Darkroom;
+                });
             }
 
             f.content_ui
