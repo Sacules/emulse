@@ -9,14 +9,18 @@ rust-version = "1.72"
 
 
 [dependencies]
-egui = { version = "0.27.0" }
+egui = { version = "0.28.1" }
 log = "0.4"
-image = { version = "0.24.0", features = ["jpeg", "tiff", "bmp"] }
+image = { version = "0.25.0", features = ["jpeg", "tiff", "bmp"] }
 cgmath = { version = "0.18.0", features = ["mint", "swizzle"] }
-egui_extras = { version = "*", features = ["all_loaders", "image", "file"] }
-egui_grid = "0.5.1"
+egui_extras = { version = "0.28.1", features = [
+	"all_loaders",
+	"image",
+	"file",
+] }
+egui_grid = { git = "https://github.com/mythitorium/egui-grid.git", branch = "master" }
 miniquad = "=0.4.0"
-egui_miniquad = { git = "https://github.com/not-fl3/egui-miniquad.git", branch = "master", package = "egui-miniquad" }
+egui-miniquad = { version = "0.15.0" }
 bytemuck = { version = "1.16.1", features = ["bytemuck_derive", "derive"] }
 mut-rc = "0.1.2"
 rayon = "1.10.0"
