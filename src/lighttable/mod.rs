@@ -1,7 +1,6 @@
 pub mod db;
 pub mod image;
 
-use db::Database;
 use egui::TextureHandle;
 use mut_rc::MutRc;
 use std::collections::HashMap;
@@ -15,15 +14,11 @@ pub struct LightTable {
     pub texture_map: HashMap<String, TextureHandle>,
 
     state: MutRc<EmulseState>,
-    db: Database,
 }
 
 impl LightTable {
     pub fn new(state: MutRc<EmulseState>) -> Self {
-        let db = Database::new();
-
         Self {
-            db,
             images: vec![],
             state,
             texture_map: HashMap::new(),
@@ -43,7 +38,6 @@ impl LightTable {
                             ui.label("roll");
                         });
                         ui.add_space(8.0);
-                        ui.button("Import");
                     });
                 });
             });
