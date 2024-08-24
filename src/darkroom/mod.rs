@@ -130,8 +130,8 @@ fn egui_to_mq_texture_id(from: egui::TextureId) -> mq::TextureId {
     match from {
         egui::TextureId::Managed(id) => {
             // For some reason OpenGL expects u32 for the texture IDs,
-            // but egui uses u64 instead. Also, it's off by 1.
-            let raw_id = mq::RawId::OpenGl((id + 1).try_into().expect("couldn't cast"));
+            // but egui uses u64 instead. Also, it's off by 2???
+            let raw_id = mq::RawId::OpenGl((id + 2).try_into().expect("couldn't cast"));
             mq::TextureId::from_raw_id(raw_id)
         }
         _ => mq::TextureId::from_raw_id(mq::RawId::OpenGl(1)),

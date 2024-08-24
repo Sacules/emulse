@@ -22,9 +22,11 @@ impl Database {
 
     pub fn insert_images(
         &self,
-        images: Vec<Image>,
+        images: &Vec<Image>,
     ) -> Result<polodb_core::results::InsertManyResult, polodb_core::Error> {
-        self.db.collection(IMAGE_COLLECTION).insert_many(images)
+        self.db
+            .collection::<Image>(IMAGE_COLLECTION)
+            .insert_many(images)
     }
 
     pub fn get_images(&self) -> polodb_core::Result<Vec<Image>> {

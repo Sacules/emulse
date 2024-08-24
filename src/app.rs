@@ -1,5 +1,7 @@
 #![allow(clippy::new_without_default)]
 
+use std::path::PathBuf;
+
 use mut_rc::MutRc;
 use {egui_miniquad as egui_mq, miniquad as mq};
 
@@ -15,7 +17,7 @@ pub enum CurrentView {
 
 #[derive(Debug, Clone, Default)]
 pub struct EmulseState {
-    pub selected_image_path: String,
+    pub selected_image_path: Option<PathBuf>,
     pub current_view: CurrentView,
 }
 
@@ -58,14 +60,13 @@ impl mq::EventHandler for App {
             CurrentView::Darkroom => match &self.darkroom {
                 Some(_) => {}
                 None => {
-                    let handle = self
-                        .light_table
-                        .texture_map
-                        .get(&self.state.get_clone().unwrap().selected_image_path)
-                        .unwrap();
+                    if let Some(path) = self.state.get_clone().unwrap().selected_image_path {
+                        let handle = self.light_table.texture_map.get(&path).unwrap();
 
-                    self.darkroom = Some(Darkroom::new(self.mq_ctx.as_mut(), handle.to_owned()));
-                    self.darkroom.as_mut().unwrap().update(self.mq_ctx.as_mut());
+                        self.darkroom =
+                            Some(Darkroom::new(self.mq_ctx.as_mut(), handle.to_owned()));
+                        self.darkroom.as_mut().unwrap().update(self.mq_ctx.as_mut());
+                    }
                 }
             },
             CurrentView::LightTable => {}
@@ -92,8 +93,12 @@ impl mq::EventHandler for App {
                             let darkroom =
                                 ui.add(egui::Button::new(egui::RichText::new("Darkroom")));
                             if darkroom.clicked()
-                                && self.state.get_clone().unwrap().selected_image_path
-                                    != String::new()
+                                && self
+                                    .state
+                                    .get_clone()
+                                    .unwrap()
+                                    .selected_image_path
+                                    .is_some()
                             {
                                 let _ = self
                                     .state
