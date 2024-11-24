@@ -13,6 +13,7 @@ uniform float temperature;
 
 const float PI = 3.141592653589793238462643383279502884197169399375105820974944;
 const float max_value = 255.0;
+const vec3 kSRGB_luminance_factors = vec3(0.2126, 0.7152, 0.0722);
 
 vec3 invertPixel(vec3 p) {
     return vec3(1.0 - p.r, 1.0 - p.g, 1.0 - p.b);
@@ -34,6 +35,11 @@ vec3 adjustContrast(vec3 p, float contrast) {
     return vec3(new_r, new_g, new_b);
 }
 
+vec3 adjustSaturation(vec3 p, float saturation) {
+    vec3 intensity = vec3(dot(p, kSRGB_luminance_factors));
+    return mix(intensity, p, saturation);
+}
+
 vec3 adjustBrightness(vec3 p, float brightness) {
     return p * brightness;
 }
@@ -45,6 +51,7 @@ void main() {
     }
 
     p.rgb = adjustContrast(p.rgb, contrast);
+    p.rgb = adjustSaturation(p.rgb, saturation);
     p.rgb = adjustBrightness(p.rgb, brightness);
 
     color = p;
