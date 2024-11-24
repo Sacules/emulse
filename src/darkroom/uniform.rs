@@ -10,7 +10,7 @@ pub struct FragmentUniform {
     pub contrast: f32,
     pub saturation: f32,
     pub brightness: f32,
-    //pub temperature: f32,
+    pub temperature: f32,
 }
 
 impl Default for FragmentUniform {
@@ -20,7 +20,7 @@ impl Default for FragmentUniform {
             contrast: 0.0,
             saturation: 1.0,
             brightness: 1.0,
-            //temperature: 5500.0,
+            temperature: 5500.0,
         }
     }
 }

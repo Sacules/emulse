@@ -75,6 +75,12 @@ impl Darkroom {
                             .trailing_fill(true),
                     );
 
+                    ui.label("temperature");
+                    ui.add(
+                        egui::Slider::new(&mut self.frag_uniform.temperature, 1_000.0..=10_000.0)
+                            .trailing_fill(true),
+                    );
+
                     let mut invert = self.frag_uniform.invert != 0;
                     ui.add(egui::Checkbox::new(&mut invert, "Invert"));
                     self.frag_uniform.invert = invert as u32;

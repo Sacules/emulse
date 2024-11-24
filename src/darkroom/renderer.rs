@@ -45,6 +45,7 @@ impl Renderer {
                             mq::UniformDesc::new("contrast", mq::UniformType::Float1),
                             mq::UniformDesc::new("saturation", mq::UniformType::Float1),
                             mq::UniformDesc::new("brightness", mq::UniformType::Float1),
+                            mq::UniformDesc::new("temperature", mq::UniformType::Float1),
                         ],
                     },
                 },
