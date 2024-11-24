@@ -47,7 +47,6 @@ impl LightTable {
 
                         if ui.button("Import").clicked() {
                             let folder = rfd::FileDialog::new()
-                                .add_filter("image", &["BMP", "tif", "jpg"])
                                 .set_directory(".")
                                 .pick_folder()
                                 .unwrap();

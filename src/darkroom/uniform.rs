@@ -6,22 +6,21 @@ use serde::{Deserialize, Serialize};
 // This is so we can store this in a buffer
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct FragmentUniform {
+    pub invert: u32,
     pub contrast: f32,
     pub saturation: f32,
     pub brightness: f32,
-    // GLSL doesn't support bools in uniforms so we'll have to trick it
-    pub invert: u32,
-    pub temperature: f32,
+    //pub temperature: f32,
 }
 
 impl Default for FragmentUniform {
     fn default() -> Self {
         Self {
+            invert: 0,
             contrast: 0.0,
             saturation: 1.0,
-            brightness: 0.0,
-            invert: 0,
-            temperature: 5500.0,
+            brightness: 1.0,
+            //temperature: 5500.0,
         }
     }
 }

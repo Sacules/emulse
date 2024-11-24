@@ -5,10 +5,18 @@ out vec4 color;
 
 uniform sampler2D tex;
 
+uniform int invert;
 uniform float contrast;
+uniform float saturation;
+uniform float brightness;
+uniform float temperature;
 
 const float PI = 3.141592653589793238462643383279502884197169399375105820974944;
 const float max_value = 255.0;
+
+vec3 invertPixel(vec3 p) {
+    return vec3(1.0 - p.r, 1.0 - p.g, 1.0 - p.b);
+}
 
 float adjustContrastPixel(float c, float percent) {
     c = c * max_value;
@@ -26,10 +34,18 @@ vec3 adjustContrast(vec3 p, float contrast) {
     return vec3(new_r, new_g, new_b);
 }
 
+vec3 adjustBrightness(vec3 p, float brightness) {
+    return p * brightness;
+}
+
 void main() {
     vec4 p = texture2D(tex, v_tex_coords);
+    if (invert == 1) {
+        p.rgb = invertPixel(p.rgb);
+    }
 
     p.rgb = adjustContrast(p.rgb, contrast);
+    p.rgb = adjustBrightness(p.rgb, brightness);
 
     color = p;
 }

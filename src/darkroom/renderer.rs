@@ -40,7 +40,12 @@ impl Renderer {
                 mq::ShaderMeta {
                     images: vec!["tex".to_string()],
                     uniforms: mq::UniformBlockLayout {
-                        uniforms: vec![mq::UniformDesc::new("contrast", mq::UniformType::Float1)],
+                        uniforms: vec![
+                            mq::UniformDesc::new("invert", mq::UniformType::Int1),
+                            mq::UniformDesc::new("contrast", mq::UniformType::Float1),
+                            mq::UniformDesc::new("saturation", mq::UniformType::Float1),
+                            mq::UniformDesc::new("brightness", mq::UniformType::Float1),
+                        ],
                     },
                 },
             )

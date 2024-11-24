@@ -65,7 +65,7 @@ impl Darkroom {
 
                     ui.label("brightness");
                     ui.add(
-                        egui::Slider::new(&mut self.frag_uniform.brightness, -0.25..=0.25)
+                        egui::Slider::new(&mut self.frag_uniform.brightness, 0.0..=2.0)
                             .trailing_fill(true),
                     );
 
